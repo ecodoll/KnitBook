@@ -1,0 +1,71 @@
+---
+description: KnitBook(뜨개인을 위한 웹 서비스) 프로젝트 개발 규칙 — UX, 스택, 코딩 스타일
+alwaysApply: true
+---
+
+# KnitBook 프로젝트 규칙
+
+뜨개인을 위한 웹 서비스. 사용자 경험을 최우선으로 개발한다.
+
+## 프로젝트 특성
+
+- Next.js App Router 기반 웹 애플리케이션
+- **UX 필수**: 로딩 / 빈 상태 / 오류 상태 UI를 모두 제공한다
+- 상호작용 지연을 최소화한다 (낙관적 업데이트, Suspense, 스켈레톤 등 활용)
+- **오류 처리**:
+  - 서버·클라이언트 모두 예외를 포착한다
+  - 사용자에게는 **한글**로 친절한 메시지만 노출한다
+  - 개발 환경에서는 상세 로그를 출력한다
+
+```typescript
+// ❌ BAD — 빈 catch, 영문/기술 메시지를 사용자에게 노출
+catch (e) {}
+
+// ✅ GOOD
+catch (error) {
+  if (process.env.NODE_ENV === "development") {
+    console.error("[패턴 저장 실패]", error);
+  }
+  throw new Error("패턴을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+}
+```
+
+## 기술 스택
+
+| 영역 | 기술 |
+|------|------|
+| 프레임워크 | Next.js 16.3.0 (App Router) |
+| 언어 | TypeScript (필수, Strict 권장) |
+| 스타일 | Tailwind CSS |
+| UI | shadcn/ui |
+| 백엔드 | Supabase (Auth / DB 등) |
+| AI | AI SDK |
+| 린트 | ESLint (Next / TS 규칙) |
+
+- 스택 외 라이브러리 추가는 필요성이 명확할 때만 한다
+- Next.js API·관례는 이 버전의 문서(`node_modules/next/dist/docs/`)를 따른다
+
+## 코딩 스타일
+
+- 함수형 컴포넌트를 기본으로 사용한다
+- **모든 함수는 화살표 함수**로 작성한다
+- 컴포넌트 파일명은 **파스칼케이스** (`TodoList.tsx`)
+- **한글 주석 필수**: 함수/컴포넌트 상단에 한 문장 개요 + JSDoc도 한글로 작성
+- ESLint 규칙을 준수한다 (`npm run lint`)
+
+```tsx
+/**
+ * 사용자의 뜨개 패턴 목록을 렌더링한다.
+ */
+const PatternList = ({ patterns }: PatternListProps) => {
+  // ...
+};
+
+export default PatternList;
+```
+
+```tsx
+// ❌ BAD — function 선언, 영문 주석만, kebab-case 파일명
+// pattern-list.tsx
+export function PatternList() {}
+```
