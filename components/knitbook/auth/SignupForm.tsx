@@ -43,6 +43,10 @@ const SignupForm = ({
       setErrorMessage("필수 항목을 모두 입력해 주세요.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMessage("이메일 형식을 확인해 주세요.");
+      return;
+    }
     if (password.length < 8) {
       setErrorMessage("비밀번호는 8자 이상으로 입력해 주세요.");
       return;
@@ -103,6 +107,7 @@ const SignupForm = ({
         <Label htmlFor="signup-nickname">닉네임</Label>
         <Input
           id="signup-nickname"
+          autoComplete="nickname"
           value={nickname}
           onChange={(event) => setNickname(event.target.value)}
           placeholder="뜨개 닉네임"
@@ -120,6 +125,7 @@ const SignupForm = ({
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="8자 이상"
+          minLength={8}
           required
           disabled={isSubmitting}
         />
@@ -133,6 +139,8 @@ const SignupForm = ({
           autoComplete="new-password"
           value={passwordConfirm}
           onChange={(event) => setPasswordConfirm(event.target.value)}
+          placeholder="비밀번호를 한 번 더"
+          minLength={8}
           required
           disabled={isSubmitting}
         />
@@ -151,7 +159,7 @@ const SignupForm = ({
 
       <p className="text-center text-sm text-muted-foreground">
         이미 계정이 있나요?{" "}
-        <Link href="/login" className="font-medium text-primary hover:underline">
+        <Link href="/login" className="text-primary font-medium hover:underline">
           로그인
         </Link>
       </p>
