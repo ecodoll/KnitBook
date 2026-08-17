@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import SignupForm, {
   type SignupFormValues,
 } from "@/components/knitbook/auth/SignupForm";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -15,11 +16,11 @@ import {
 } from "@/components/ui/card";
 
 /**
- * 회원가입 화면 본문(로고·소개·폼)을 구성한다.
+ * 회원가입 화면 본문(로고·소개·폼·가입 완료)을 구성한다.
  */
 const SignupScreen = () => {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
 
   const handleSignup = async (values: SignupFormValues) => {
     setIsSubmitting(true);
@@ -32,7 +33,7 @@ const SignupScreen = () => {
         });
       }
       await new Promise((resolve) => setTimeout(resolve, 400));
-      router.push("/login");
+      setIsComplete(true);
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[회원가입 실패]", error);
@@ -63,17 +64,36 @@ const SignupScreen = () => {
 
         <Card className="w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">회원가입</CardTitle>
+            <CardTitle className="text-xl">
+              {isComplete ? "가입 완료" : "회원가입"}
+            </CardTitle>
             <CardDescription>
-              이메일과 비밀번호로 KnitBook을 시작해 주세요.
+              {isComplete
+                ? "이제 KnitBook에 로그인할 수 있어요."
+                : "이메일과 비밀번호로 KnitBook을 시작해 주세요."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <SignupForm
-              showHeader={false}
-              onSubmit={handleSignup}
-              isSubmitting={isSubmitting}
-            />
+            {isComplete ? (
+              <div className="space-y-4 text-center">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  가입이 완료되었어요. 이메일과 비밀번호로 로그인해 주세요.
+                </p>
+                <Button
+                  className="w-full"
+                  nativeButton={false}
+                  render={<Link href="/login" />}
+                >
+                  로그인하기
+                </Button>
+              </div>
+            ) : (
+              <SignupForm
+                showHeader={false}
+                onSubmit={handleSignup}
+                isSubmitting={isSubmitting}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
