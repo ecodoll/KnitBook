@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { SAMPLE_HEADER_USER } from "@/components/knitbook/layout/AppHeader";
 import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
 import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
@@ -32,7 +33,7 @@ import {
 import { Plus, Sparkles } from "lucide-react";
 
 /** 홈 대시보드용 임시 샘플 데이터 (API 연동 전) */
-const SAMPLE_NICKNAME = "뜨개인";
+const SAMPLE_NICKNAME = SAMPLE_HEADER_USER.nickname;
 
 const SAMPLE_PROJECTS: Project[] = [
   {

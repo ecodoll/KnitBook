@@ -1,27 +1,43 @@
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 type KnitBookLogoProps = {
-  /** 로고 아래 서비스명 표시 여부 */
+  /** 로고 옆/아래 서비스명 표시 여부 */
   showWordmark?: boolean;
+  /** stacked: 인증 화면용 세로 배치, inline: 헤더용 가로 배치 */
+  variant?: "stacked" | "inline";
 };
 
 /**
  * KnitBook 워드마크 로고를 표시한다.
  */
-const KnitBookLogo = ({ showWordmark = true }: KnitBookLogoProps) => {
+const KnitBookLogo = ({
+  showWordmark = true,
+  variant = "stacked",
+}: KnitBookLogoProps) => {
+  const isInline = variant === "inline";
+
   return (
     <Link
       href="/"
-      className="inline-flex flex-col items-center gap-3 outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className={cn(
+        "inline-flex outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        isInline
+          ? "shrink-0 items-center gap-2 rounded-md"
+          : "flex-col items-center gap-3"
+      )}
       aria-label="KnitBook 홈"
     >
       <span
-        className="flex size-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm"
+        className={cn(
+          "flex items-center justify-center bg-primary text-primary-foreground shadow-sm",
+          isInline ? "size-8 rounded-lg" : "size-16 rounded-2xl"
+        )}
         aria-hidden
       >
         <svg
           viewBox="0 0 48 48"
-          className="size-9"
+          className={isInline ? "size-5" : "size-9"}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -47,7 +63,12 @@ const KnitBookLogo = ({ showWordmark = true }: KnitBookLogoProps) => {
         </svg>
       </span>
       {showWordmark ? (
-        <span className="font-heading text-3xl font-semibold tracking-tight text-foreground">
+        <span
+          className={cn(
+            "font-heading font-semibold tracking-tight text-foreground",
+            isInline ? "text-base" : "text-3xl"
+          )}
+        >
           KnitBook
         </span>
       ) : null}

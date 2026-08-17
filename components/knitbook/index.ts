@@ -5,6 +5,7 @@
 export type * from "@/components/knitbook/types";
 
 export { default as AppShell } from "@/components/knitbook/layout/AppShell";
+export { default as AppHeader } from "@/components/knitbook/layout/AppHeader";
 export { default as BottomNav } from "@/components/knitbook/layout/BottomNav";
 
 export { default as LoadingState } from "@/components/knitbook/shared/LoadingState";
