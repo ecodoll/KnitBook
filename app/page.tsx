@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import AppShell from "@/components/knitbook/layout/AppShell";
 import HomeDashboard from "@/app/HomeDashboard";
+import { getHomeDashboardData } from "@/lib/knitbook/home-data";
 
 export const metadata: Metadata = {
   title: "홈 | KnitBook",
@@ -11,10 +13,21 @@ export const metadata: Metadata = {
 /**
  * KnitBook 메인(홈) 대시보드 페이지이다.
  */
-const HomePage = () => {
+const HomePage = async () => {
+  const dashboard = await getHomeDashboardData();
+
+  if (!dashboard) {
+    redirect("/login");
+  }
+
   return (
-    <AppShell>
-      <HomeDashboard />
+    <AppShell user={dashboard.user}>
+      <HomeDashboard
+        nickname={dashboard.user.nickname}
+        initialProjects={dashboard.projects}
+        initialPatterns={dashboard.patterns}
+        initialYarnSummary={dashboard.yarnSummary}
+      />
     </AppShell>
   );
 };

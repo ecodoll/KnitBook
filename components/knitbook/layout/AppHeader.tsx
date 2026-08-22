@@ -5,8 +5,16 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
+import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 
 export type AppHeaderUser = {
@@ -15,19 +23,13 @@ export type AppHeaderUser = {
 };
 
 type AppHeaderProps = {
-  user?: AppHeaderUser;
-};
-
-/** Auth 연동 전 헤더에 보여줄 임시 로그인 사용자 */
-export const SAMPLE_HEADER_USER: AppHeaderUser = {
-  nickname: "뜨개인",
-  email: "knitter@example.com",
+  user: AppHeaderUser;
 };
 
 /**
- * 앱 상단 헤더(로고·로그인 사용자·로그아웃)를 렌더링한다.
+ * 앱 상단 헤더(로고·프로필 메뉴)를 렌더링한다.
  */
-const AppHeader = ({ user = SAMPLE_HEADER_USER }: AppHeaderProps) => {
+const AppHeader = ({ user }: AppHeaderProps) => {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -37,12 +39,15 @@ const AppHeader = ({ user = SAMPLE_HEADER_USER }: AppHeaderProps) => {
     setErrorMessage(null);
 
     try {
-      // TODO: Supabase Auth 연동
-      if (process.env.NODE_ENV === "development") {
-        console.info("[로그아웃 시도]", { nickname: user.nickname });
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) {
+        throw error;
       }
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      router.push("/login");
+
+      router.replace("/login");
+      router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[로그아웃 실패]", error);
@@ -53,43 +58,61 @@ const AppHeader = ({ user = SAMPLE_HEADER_USER }: AppHeaderProps) => {
     }
   };
 
-  const initial = user.nickname.trim().slice(0, 1) || "뜨";
+  const initial = user.nickname.trim().slice(0, 1) || "?";
+  const email = user.email?.trim() || "이메일 없음";
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4">
         <KnitBookLogo variant="inline" />
 
-        <div className="flex min-w-0 items-center gap-2">
-          <div
-            className="flex min-w-0 items-center gap-2"
-            title={user.email}
-            aria-label={`${user.nickname}으로 로그인 중`}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="cursor-pointer rounded-full"
+                aria-label={`${user.nickname} 프로필 메뉴`}
+              />
+            }
           >
-            <Avatar size="sm" aria-hidden>
+            <Avatar size="sm">
               <AvatarFallback>{initial}</AvatarFallback>
             </Avatar>
-            <p className="truncate text-sm font-medium text-foreground">
-              {user.nickname}
-            </p>
-          </div>
+          </DropdownMenuTrigger>
 
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-            aria-label="로그아웃"
-          >
-            {isLoggingOut ? (
-              <Spinner data-icon="inline-start" />
-            ) : (
-              <LogOut data-icon="inline-start" />
-            )}
-            로그아웃
-          </Button>
-        </div>
+            <DropdownMenuContent align="end" className="min-w-56 p-3">
+              <DropdownMenuGroup>
+                <DropdownMenuLabel className="space-y-0.5 px-0 text-foreground">
+                  <span className="block truncate text-sm font-medium">
+                    {user.nickname}
+                  </span>
+                  <span className="block truncate text-sm font-normal text-muted-foreground">
+                    {email}
+                  </span>
+                </DropdownMenuLabel>
+              </DropdownMenuGroup>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              className="mt-3 w-full"
+              disabled={isLoggingOut}
+              onClick={() => {
+                void handleLogout();
+              }}
+            >
+              {isLoggingOut ? (
+                <Spinner data-icon="inline-start" />
+              ) : (
+                <LogOut data-icon="inline-start" />
+              )}
+              로그아웃
+            </Button>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {errorMessage ? (

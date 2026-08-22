@@ -35,4 +35,5 @@ export { default as YarnForm } from "@/components/knitbook/yarns/YarnForm";
 
 export { default as LoginForm } from "@/components/knitbook/auth/LoginForm";
 export { default as SignupForm } from "@/components/knitbook/auth/SignupForm";
+export { default as AuthSync } from "@/components/knitbook/auth/AuthSync";
 export { default as KnitBookLogo } from "@/components/knitbook/auth/KnitBookLogo";

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { SAMPLE_HEADER_USER } from "@/components/knitbook/layout/AppHeader";
+import { useRouter } from "next/navigation";
 import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
 import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
@@ -15,6 +15,7 @@ import type {
   Project,
   YarnInventorySummary,
 } from "@/components/knitbook/types";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -32,103 +33,34 @@ import {
 } from "@/components/ui/dialog";
 import { Plus, Sparkles } from "lucide-react";
 
-/** 홈 대시보드용 임시 샘플 데이터 (API 연동 전) */
-const SAMPLE_NICKNAME = SAMPLE_HEADER_USER.nickname;
-
-const SAMPLE_PROJECTS: Project[] = [
-  {
-    id: "proj-1",
-    title: "Winter Cardigan",
-    status: "in_progress",
-    progressPercent: 72,
-    currentRow: 42,
-    totalRows: 55,
-    lastWorkedAt: "2026-08-07T20:30:00.000Z",
-    lastNote: "몸통 끝부분 진행 중",
-    patternTitle: "Winter Cardigan Pattern",
-  },
-  {
-    id: "proj-2",
-    title: "소프트 머플러",
-    status: "in_progress",
-    progressPercent: 35,
-    currentRow: 28,
-    totalRows: 80,
-    lastWorkedAt: "2026-08-05T14:00:00.000Z",
-    lastNote: "고무단 완료",
-  },
-];
-
-const SAMPLE_PATTERNS: Pattern[] = [
-  {
-    id: "pat-1",
-    title: "Winter Cardigan",
-    designer: "Knit Studio",
-    difficulty: 3,
-    isFavorite: true,
-    createdAt: "2026-07-01T00:00:00.000Z",
-    lastOpenedAt: "2026-08-07T20:00:00.000Z",
-  },
-  {
-    id: "pat-2",
-    title: "리브 비니",
-    designer: "Soft Loop",
-    difficulty: 2,
-    createdAt: "2026-06-12T00:00:00.000Z",
-    lastOpenedAt: "2026-08-04T10:00:00.000Z",
-  },
-  {
-    id: "pat-3",
-    title: "여름 베스트",
-    designer: "Yarn Days",
-    difficulty: 4,
-    createdAt: "2026-05-20T00:00:00.000Z",
-    lastOpenedAt: "2026-08-01T09:00:00.000Z",
-  },
-];
-
-const SAMPLE_YARN_SUMMARY: YarnInventorySummary = {
-  totalKinds: 38,
-  totalRemainingGrams: 4250,
-  lowStockCount: 2,
-  recentYarns: [
-    {
-      id: "yarn-1",
-      brand: "Drops",
-      productName: "Alaska",
-      colorName: "Grey",
-      remainingGrams: 320,
-    },
-    {
-      id: "yarn-2",
-      brand: "Rowan",
-      productName: "Felted Tweed",
-      colorName: "Clay",
-      remainingGrams: 150,
-    },
-    {
-      id: "yarn-3",
-      brand: "다카야마",
-      productName: "코튼 블렌드",
-      colorName: "아이보리",
-      remainingGrams: 80,
-      isInUse: true,
-    },
-  ],
+type HomeDashboardProps = {
+  nickname: string;
+  initialProjects: Project[];
+  initialPatterns: Pattern[];
+  initialYarnSummary: YarnInventorySummary;
 };
 
 /**
  * PRD 홈 대시보드(인사·작품·빠른 기록·도안·실·AI 안내)를 조립한다.
  */
-const HomeDashboard = () => {
+const HomeDashboard = ({
+  nickname,
+  initialProjects,
+  initialPatterns,
+  initialYarnSummary,
+}: HomeDashboardProps) => {
+  const router = useRouter();
+  const [projects, setProjects] = useState(initialProjects);
   const [logOpen, setLogOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isSavingLog, setIsSavingLog] = useState(false);
 
+  const hasProjects = useMemo(() => projects.length > 0, [projects.length]);
+
   const openQuickLog = (projectId?: string) => {
     const target =
-      SAMPLE_PROJECTS.find((project) => project.id === projectId) ??
-      SAMPLE_PROJECTS[0] ??
+      projects.find((project) => project.id === projectId) ??
+      projects[0] ??
       null;
 
     if (!target) {
@@ -146,22 +78,84 @@ const HomeDashboard = () => {
 
     setIsSavingLog(true);
     try {
-      // TODO: Supabase 작업 기록 API 연동
-      if (process.env.NODE_ENV === "development") {
-        console.info("[빠른 기록 저장]", {
-          projectId: activeProject.id,
-          ...values,
-        });
+      const supabase = createClient();
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        throw new Error("로그인이 만료되었어요. 다시 로그인해 주세요.");
       }
-      await new Promise((resolve) => setTimeout(resolve, 350));
+
+      const { error: logError } = await supabase.from("project_logs").insert({
+        project_id: activeProject.id,
+        row_count: values.currentRow,
+        progress_percent: values.progressPercent,
+        work_minutes: values.durationMinutes,
+        memo: values.memo || null,
+      });
+
+      if (logError) {
+        throw logError;
+      }
+
+      const projectPatch: {
+        current_row?: number | null;
+        progress_percent?: number | null;
+        notes?: string | null;
+      } = {};
+
+      if (values.currentRow !== null) {
+        projectPatch.current_row = values.currentRow;
+      }
+      if (values.progressPercent !== null) {
+        projectPatch.progress_percent = values.progressPercent;
+      }
+      if (values.memo.trim()) {
+        projectPatch.notes = values.memo.trim();
+      }
+
+      if (Object.keys(projectPatch).length > 0) {
+        const { error: projectError } = await supabase
+          .from("projects")
+          .update(projectPatch)
+          .eq("id", activeProject.id)
+          .eq("user_id", user.id);
+
+        if (projectError) {
+          throw projectError;
+        }
+      }
+
+      setProjects((prev) =>
+        prev.map((project) => {
+          if (project.id !== activeProject.id) {
+            return project;
+          }
+
+          return {
+            ...project,
+            currentRow: values.currentRow ?? project.currentRow,
+            progressPercent:
+              values.progressPercent ?? project.progressPercent,
+            lastNote: values.memo.trim() || project.lastNote,
+            lastWorkedAt: new Date().toISOString(),
+          };
+        })
+      );
+
       setLogOpen(false);
       setActiveProject(null);
+      router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[빠른 기록 저장 실패]", error);
       }
       throw new Error(
-        "작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+        error instanceof Error
+          ? error.message
+          : "작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
       );
     } finally {
       setIsSavingLog(false);
@@ -170,10 +164,10 @@ const HomeDashboard = () => {
 
   return (
     <div className="space-y-8 pb-2">
-      <HomeGreeting nickname={SAMPLE_NICKNAME} />
+      <HomeGreeting nickname={nickname} />
 
       <InProgressSection
-        projects={SAMPLE_PROJECTS}
+        projects={projects}
         onQuickLog={(projectId) => openQuickLog(projectId)}
       />
 
@@ -186,21 +180,21 @@ const HomeDashboard = () => {
           variant="secondary"
           className="h-12 w-full justify-start gap-2"
           onClick={() => openQuickLog()}
-          disabled={SAMPLE_PROJECTS.length === 0}
+          disabled={!hasProjects}
         >
           <Plus className="size-4" aria-hidden />
           작업 기록
         </Button>
-        {SAMPLE_PROJECTS.length === 0 ? (
+        {!hasProjects ? (
           <p className="text-xs text-muted-foreground">
             진행 중인 작품이 있으면 바로 단수를 남길 수 있어요.
           </p>
         ) : null}
       </section>
 
-      <RecentPatternsSection patterns={SAMPLE_PATTERNS} />
+      <RecentPatternsSection patterns={initialPatterns} />
 
-      <YarnSummarySection summary={SAMPLE_YARN_SUMMARY} />
+      <YarnSummarySection summary={initialYarnSummary} />
 
       <section className="space-y-3" aria-labelledby="ai-teaser-heading">
         <h2 id="ai-teaser-heading" className="text-base font-medium">

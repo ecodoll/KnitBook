@@ -28,7 +28,7 @@ const AppShell = ({
 }: AppShellProps) => {
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background">
-      {showHeader ? <AppHeader user={user} /> : null}
+      {showHeader && user ? <AppHeader user={user} /> : null}
       <main
         className={cn(
           "mx-auto w-full max-w-lg flex-1 px-4 pt-4",

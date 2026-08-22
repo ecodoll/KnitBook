@@ -6,6 +6,7 @@ import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import LoginForm, {
   type LoginFormValues,
 } from "@/components/knitbook/auth/LoginForm";
+import { createClient } from "@/lib/supabase/client";
 import {
   Card,
   CardContent,
@@ -13,6 +14,37 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+/**
+ * Supabase 로그인 오류를 사용자용 한글 메시지로 변환한다.
+ */
+const getLoginErrorMessage = (error: unknown) => {
+  const rawMessage =
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+      ? error.message
+      : "";
+  const normalized = rawMessage.toLowerCase();
+
+  if (
+    normalized.includes("invalid login credentials") ||
+    normalized.includes("invalid credentials")
+  ) {
+    return "이메일 또는 비밀번호가 올바르지 않아요.";
+  }
+
+  if (normalized.includes("email not confirmed")) {
+    return "이메일 확인이 아직 완료되지 않았어요. 메일함의 확인 링크를 눌러 주세요.";
+  }
+
+  if (normalized.includes("too many") || normalized.includes("rate limit")) {
+    return "요청이 너무 많아요. 잠시 후 다시 시도해 주세요.";
+  }
+
+  return "로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요.";
+};
 
 /**
  * 로그인 화면 본문(로고·소개·폼)을 구성한다.
@@ -24,19 +56,23 @@ const LoginScreen = () => {
   const handleLogin = async (values: LoginFormValues) => {
     setIsSubmitting(true);
     try {
-      // TODO: Supabase Auth 연동
-      if (process.env.NODE_ENV === "development") {
-        console.info("[로그인 시도]", { email: values.email });
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+
+      if (error) {
+        throw error;
       }
-      await new Promise((resolve) => setTimeout(resolve, 400));
-      router.push("/");
+
+      router.replace("/");
+      router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[로그인 실패]", error);
       }
-      throw new Error(
-        "로그인에 실패했어요. 이메일과 비밀번호를 확인해 주세요."
-      );
+      throw new Error(getLoginErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }
