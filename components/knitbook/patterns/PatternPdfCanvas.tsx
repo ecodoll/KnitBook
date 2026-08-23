@@ -31,20 +31,13 @@ const PatternPdfCanvas = ({
 }: PatternPdfCanvasProps) => {
   const [pageWidth, setPageWidth] = useState(320);
 
-  const fileSource = useMemo(
-    () => ({
-      url: pdfUrl,
-      withCredentials: false,
-    }),
-    [pdfUrl]
-  );
-
   /** 서명 URL에서 Range 요청이 실패하며 무한 로딩되는 것을 막는다. */
   const documentOptions = useMemo(
     () => ({
       disableRange: true,
       disableStream: true,
       disableAutoFetch: true,
+      withCredentials: false,
     }),
     []
   );
@@ -63,7 +56,7 @@ const PatternPdfCanvas = ({
   return (
     <div className={cn("flex justify-center", className)}>
       <Document
-        file={fileSource}
+        file={pdfUrl}
         options={documentOptions}
         loading={
           <p className="text-sm text-muted-foreground">PDF를 불러오는 중이에요…</p>
