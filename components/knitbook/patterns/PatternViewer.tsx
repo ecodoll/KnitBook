@@ -30,6 +30,7 @@ type PatternViewerProps = {
 
 /**
  * 모바일 우선 PDF 뷰어 툴바와 뷰 영역을 구성한다.
+ * 로딩 오버레이는 자식(PDF 캔버스)을 언마운트하지 않아 문서 로드가 진행된다.
  */
 const PatternViewer = ({
   title,
@@ -79,15 +80,23 @@ const PatternViewer = ({
       </header>
 
       <div className="relative flex flex-1 items-center justify-center overflow-auto bg-muted/40 p-3">
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground">도안을 불러오는 중이에요…</p>
-        ) : (
-          children ?? (
-            <p className="text-sm text-muted-foreground">
-              PDF 뷰어 영역 (페이지 {currentPage})
-            </p>
-          )
+        {/* PDF 캔버스는 로딩 중에도 마운트해야 onDocumentLoad가 호출된다. */}
+        {children ?? (
+          <p className="text-sm text-muted-foreground">
+            PDF 뷰어 영역 (페이지 {currentPage})
+          </p>
         )}
+        {isLoading ? (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center bg-muted/80"
+            role="status"
+            aria-live="polite"
+          >
+            <p className="text-sm text-muted-foreground">
+              도안을 불러오는 중이에요…
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <footer className="flex items-center justify-between gap-2 border-t border-border px-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">

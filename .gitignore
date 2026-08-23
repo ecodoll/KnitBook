@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# pdf.js worker (copied from pdfjs-dist on build/dev)
+/public/pdf.worker.min.mjs
+
 # production
 /build
 

@@ -218,14 +218,14 @@ const PatternDetailScreen = ({ initialPattern }: PatternDetailScreenProps) => {
           <PatternViewer
             title={pattern.title}
             currentPage={currentPage}
-            totalPages={totalPages || currentPage}
+            totalPages={totalPages}
             zoomPercent={zoomPercent}
             onPageChange={setCurrentPage}
             onZoomChange={setZoomPercent}
             onToggleBookmark={() => void handleToggleBookmark()}
             onToggleFullscreen={() => void handleToggleFullscreen()}
             isBookmarked={currentPageData.bookmark}
-            isLoading={!totalPages}
+            isLoading={!totalPages && !loadError}
           >
             <PatternPdfCanvas
               pdfUrl={pattern.pdfUrl}

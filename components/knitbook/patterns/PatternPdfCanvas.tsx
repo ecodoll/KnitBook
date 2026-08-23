@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { cn } from "@/lib/utils";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.min.mjs",
-  import.meta.url
-).toString();
+/** Next.js/Turbopack에서도 안정적으로 로드되도록 public 워커를 사용한다. */
+pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
 
 type PatternPdfCanvasProps = {
   pdfUrl: string;
@@ -33,6 +31,24 @@ const PatternPdfCanvas = ({
 }: PatternPdfCanvasProps) => {
   const [pageWidth, setPageWidth] = useState(320);
 
+  const fileSource = useMemo(
+    () => ({
+      url: pdfUrl,
+      withCredentials: false,
+    }),
+    [pdfUrl]
+  );
+
+  /** 서명 URL에서 Range 요청이 실패하며 무한 로딩되는 것을 막는다. */
+  const documentOptions = useMemo(
+    () => ({
+      disableRange: true,
+      disableStream: true,
+      disableAutoFetch: true,
+    }),
+    []
+  );
+
   useEffect(() => {
     const updateWidth = () => {
       const maxWidth = Math.min(window.innerWidth - 32, 480);
@@ -47,7 +63,8 @@ const PatternPdfCanvas = ({
   return (
     <div className={cn("flex justify-center", className)}>
       <Document
-        file={pdfUrl}
+        file={fileSource}
+        options={documentOptions}
         loading={
           <p className="text-sm text-muted-foreground">PDF를 불러오는 중이에요…</p>
         }
