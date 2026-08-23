@@ -22,6 +22,23 @@ export type Pattern = {
   createdAt: string;
 };
 
+/** 도안 페이지별 북마크·메모 */
+export type PatternPage = {
+  id?: string;
+  pageNumber: number;
+  bookmark: boolean;
+  memo?: string;
+};
+
+/** 도안 상세(뷰어) 정보 */
+export type PatternDetail = Pattern & {
+  pdfUrl?: string;
+  pdfStoragePath?: string;
+  notes?: string;
+  source?: string;
+  pages: PatternPage[];
+};
+
 /** 작품(프로젝트) 요약 정보 */
 export type Project = {
   id: string;

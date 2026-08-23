@@ -22,6 +22,9 @@ export { default as PatternCard } from "@/components/knitbook/patterns/PatternCa
 export { default as PatternList } from "@/components/knitbook/patterns/PatternList";
 export { default as PatternUploadForm } from "@/components/knitbook/patterns/PatternUploadForm";
 export { default as PatternViewer } from "@/components/knitbook/patterns/PatternViewer";
+export { default as PatternPdfCanvas } from "@/components/knitbook/patterns/PatternPdfCanvas";
+export { default as PatternMemoPanel } from "@/components/knitbook/patterns/PatternMemoPanel";
+export { default as StartProjectDialog } from "@/components/knitbook/patterns/StartProjectDialog";
 
 export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCard";
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";

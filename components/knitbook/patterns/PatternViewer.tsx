@@ -21,6 +21,7 @@ type PatternViewerProps = {
   onZoomChange?: (zoomPercent: number) => void;
   onToggleBookmark?: () => void;
   onToggleFullscreen?: () => void;
+  isBookmarked?: boolean;
   /** PDF 캔버스/iframe 영역 */
   children?: ReactNode;
   className?: string;
@@ -39,6 +40,7 @@ const PatternViewer = ({
   onZoomChange,
   onToggleBookmark,
   onToggleFullscreen,
+  isBookmarked = false,
   children,
   className,
   isLoading,
@@ -59,7 +61,7 @@ const PatternViewer = ({
               onClick={onToggleBookmark}
               aria-label="북마크"
             >
-              <Bookmark />
+              <Bookmark className={isBookmarked ? "fill-current text-brand-berry" : undefined} />
             </Button>
           ) : null}
           {onToggleFullscreen ? (

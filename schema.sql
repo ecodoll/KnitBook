@@ -564,3 +564,52 @@ create policy "project_yarns_delete_own"
         and pr.user_id = auth.uid()
     )
   );
+
+-- ---------------------------------------------------------------------------
+-- Storage: 도안 PDF (사용자별 private bucket)
+-- Supabase 대시보드에서 bucket이 없으면 아래 insert가 생성한다.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('pattern-pdfs', 'pattern-pdfs', false)
+on conflict (id) do nothing;
+
+drop policy if exists "pattern_pdfs_insert_own" on storage.objects;
+drop policy if exists "pattern_pdfs_select_own" on storage.objects;
+drop policy if exists "pattern_pdfs_update_own" on storage.objects;
+drop policy if exists "pattern_pdfs_delete_own" on storage.objects;
+
+create policy "pattern_pdfs_insert_own"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'pattern-pdfs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "pattern_pdfs_select_own"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'pattern-pdfs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "pattern_pdfs_update_own"
+  on storage.objects for update
+  to authenticated
+  using (
+    bucket_id = 'pattern-pdfs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'pattern-pdfs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "pattern_pdfs_delete_own"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'pattern-pdfs'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
