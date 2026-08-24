@@ -1,9 +1,31 @@
+import { cache } from "react";
+import type { User } from "@supabase/supabase-js";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
 
 type UserProfileRow = {
   nickname: string | null;
   email: string | null;
+};
+
+type SupabaseLikeError = {
+  code?: string;
+  message?: string;
+};
+
+/**
+ * JWT 발급 시각이 서버보다 앞선(시계 오차) 오류인지 판별한다.
+ */
+const isJwtIssuedAtFutureError = (error: unknown) => {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const typed = error as SupabaseLikeError;
+  return (
+    typed.code === "PGRST303" ||
+    (typed.message ?? "").toLowerCase().includes("jwt issued at future")
+  );
 };
 
 /**
@@ -35,34 +57,102 @@ const resolveNickname = (
 };
 
 /**
- * 로그인한 사용자의 헤더 표시 정보를 불러온다.
+ * 요청 단위로 인증 사용자를 조회한다.
  */
-const getAppHeaderUser = async (): Promise<AppHeaderUser | null> => {
+const getAuthUser = cache(async (): Promise<User | null> => {
   const supabase = await createClient();
   const {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    if (authError && process.env.NODE_ENV === "development") {
+  if (authError) {
+    if (process.env.NODE_ENV === "development") {
       console.error("[사용자 인증 조회 실패]", authError.message);
     }
     return null;
   }
 
-  const { data: profile } = await supabase
+  return user;
+});
+
+/**
+ * 로그인한 사용자의 헤더 표시 정보를 불러온다.
+ */
+const getAppHeaderUser = cache(async (): Promise<AppHeaderUser | null> => {
+  const user = await getAuthUser();
+  if (!user) {
+    return null;
+  }
+
+  const supabase = await createClient();
+  const { data: profile, error: profileError } = await supabase
     .from("users")
     .select("nickname, email")
     .eq("id", user.id)
     .maybeSingle();
 
-  const resolved = (profile as UserProfileRow | null) ?? null;
+  let resolved = (profile as UserProfileRow | null) ?? null;
+
+  if (profileError) {
+    if (isJwtIssuedAtFutureError(profileError)) {
+      if (process.env.NODE_ENV === "development") {
+        console.warn(
+          "[프로필 조회] JWT 시계 오차로 Auth 메타데이터를 사용합니다.",
+          profileError.message
+        );
+      }
+    } else if (process.env.NODE_ENV === "development") {
+      console.error("[프로필 조회 실패]", profileError.message);
+    }
+  }
+
+  if (!resolved && !profileError) {
+    const nickname = resolveNickname(null, user);
+    const { data: upserted, error: upsertError } = await supabase
+      .from("users")
+      .upsert(
+        {
+          id: user.id,
+          email: user.email,
+          nickname,
+        },
+        { onConflict: "id" }
+      )
+      .select("nickname, email")
+      .maybeSingle();
+
+    if (upsertError) {
+      if (process.env.NODE_ENV === "development") {
+        if (isJwtIssuedAtFutureError(upsertError)) {
+          console.warn(
+            "[프로필 생성] JWT 시계 오차로 DB 저장을 건너뜁니다.",
+            upsertError.message
+          );
+        } else {
+          console.error("[프로필 생성 실패]", upsertError.message);
+        }
+      }
+      resolved = { nickname, email: user.email ?? null };
+    } else {
+      resolved = (upserted as UserProfileRow | null) ?? {
+        nickname,
+        email: user.email ?? null,
+      };
+    }
+  }
+
+  if (!resolved) {
+    resolved = {
+      nickname: resolveNickname(null, user),
+      email: user.email ?? null,
+    };
+  }
 
   return {
     nickname: resolveNickname(resolved, user),
-    email: resolved?.email ?? user.email ?? undefined,
+    email: resolved.email ?? user.email ?? undefined,
   };
-};
+});
 
-export { getAppHeaderUser };
+export { getAuthUser, getAppHeaderUser };

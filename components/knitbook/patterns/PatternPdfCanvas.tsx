@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { cn } from "@/lib/utils";
+import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -59,7 +60,7 @@ const PatternPdfCanvas = ({
         file={pdfUrl}
         options={documentOptions}
         loading={
-          <p className="text-sm text-muted-foreground">PDF를 불러오는 중이에요…</p>
+          <KnitSpinner className="size-8 text-primary" label="PDF를 불러오는 중" />
         }
         error={
           <p className="text-sm text-destructive">
@@ -75,7 +76,7 @@ const PatternPdfCanvas = ({
           renderTextLayer={false}
           renderAnnotationLayer={false}
           loading={
-            <p className="text-sm text-muted-foreground">페이지를 그리는 중…</p>
+            <KnitSpinner className="size-6 text-primary" label="페이지를 그리는 중" />
           }
         />
       </Document>

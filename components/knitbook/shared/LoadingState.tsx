@@ -1,3 +1,4 @@
+import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -6,17 +7,21 @@ type LoadingStateProps = {
   rows?: number;
   className?: string;
   /** 카드형 스켈레톤 여부 */
-  variant?: "list" | "cards" | "detail";
+  variant?: "list" | "cards" | "detail" | "spinner";
 };
 
 /**
- * 목록·카드·상세 로딩 스켈레톤을 표시한다.
+ * 목록·카드·상세 로딩 스켈레톤 또는 뜨개 스피너를 표시한다.
  */
 const LoadingState = ({
   rows = 3,
   className,
   variant = "list",
 }: LoadingStateProps) => {
+  if (variant === "spinner") {
+    return <PageLoading className={cn("min-h-[12rem] py-8", className)} />;
+  }
+
   if (variant === "cards") {
     return (
       <div

@@ -6,6 +6,7 @@ import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import LoginForm, {
   type LoginFormValues,
 } from "@/components/knitbook/auth/LoginForm";
+import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { createClient } from "@/lib/supabase/client";
 import {
   Card,
@@ -52,6 +53,7 @@ const getLoginErrorMessage = (error: unknown) => {
 const LoginScreen = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsSubmitting(true);
@@ -66,17 +68,20 @@ const LoginScreen = () => {
         throw error;
       }
 
+      setIsRedirecting(true);
       router.replace("/");
-      router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[로그인 실패]", error);
       }
-      throw new Error(getLoginErrorMessage(error));
-    } finally {
       setIsSubmitting(false);
+      throw new Error(getLoginErrorMessage(error));
     }
   };
+
+  if (isRedirecting) {
+    return <PageLoading fullScreen message="KnitBook을 여는 중이에요…" />;
+  }
 
   return (
     <div className="relative flex min-h-full flex-1 flex-col items-center justify-center px-4 py-10">
