@@ -9,6 +9,8 @@ export { default as AppHeader } from "@/components/knitbook/layout/AppHeader";
 export { default as BottomNav } from "@/components/knitbook/layout/BottomNav";
 
 export { default as LoadingState } from "@/components/knitbook/shared/LoadingState";
+export { default as KnitSpinner } from "@/components/knitbook/shared/KnitSpinner";
+export { default as PageLoading } from "@/components/knitbook/shared/PageLoading";
 export { default as EmptyState } from "@/components/knitbook/shared/EmptyState";
 export { default as ErrorState } from "@/components/knitbook/shared/ErrorState";
 export { default as SearchBar } from "@/components/knitbook/shared/SearchBar";

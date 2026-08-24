@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import Link, { useLinkStatus } from "next/link";
+import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import { cn } from "@/lib/utils";
 
 type KnitBookLogoProps = {
@@ -6,6 +9,31 @@ type KnitBookLogoProps = {
   showWordmark?: boolean;
   /** stacked: 인증 화면용 세로 배치, inline: 헤더용 가로 배치 */
   variant?: "stacked" | "inline";
+};
+
+/**
+ * 홈으로 이동 중인 동안 로고 자리에 스피너를 보여준다.
+ */
+const LogoPending = ({ isInline }: { isInline: boolean }) => {
+  const { pending } = useLinkStatus();
+
+  if (!pending) {
+    return null;
+  }
+
+  return (
+    <span
+      className={cn(
+        "absolute inset-0 flex items-center justify-center bg-primary text-primary-foreground",
+        isInline ? "rounded-lg" : "rounded-2xl"
+      )}
+    >
+      <KnitSpinner
+        className={isInline ? "size-4" : "size-7"}
+        aria-hidden
+      />
+    </span>
+  );
 };
 
 /**
@@ -20,6 +48,7 @@ const KnitBookLogo = ({
   return (
     <Link
       href="/"
+      prefetch
       className={cn(
         "inline-flex outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
         isInline
@@ -30,7 +59,7 @@ const KnitBookLogo = ({
     >
       <span
         className={cn(
-          "flex items-center justify-center bg-primary text-primary-foreground shadow-sm",
+          "relative flex items-center justify-center bg-primary text-primary-foreground shadow-sm",
           isInline ? "size-8 rounded-lg" : "size-16 rounded-2xl"
         )}
         aria-hidden
@@ -61,6 +90,7 @@ const KnitBookLogo = ({
             strokeLinecap="round"
           />
         </svg>
+        <LogoPending isInline={isInline} />
       </span>
       {showWordmark ? (
         <span

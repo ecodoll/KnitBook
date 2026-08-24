@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 import type { Pattern } from "@/components/knitbook/types";
 import PatternList from "@/components/knitbook/patterns/PatternList";
@@ -18,13 +18,15 @@ type PatternsScreenProps = {
  */
 const PatternsScreen = ({ initialPatterns }: PatternsScreenProps) => {
   const [patterns, setPatterns] = useState(initialPatterns);
+  const [patternsSource, setPatternsSource] = useState(initialPatterns);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  if (initialPatterns !== patternsSource) {
+    setPatternsSource(initialPatterns);
     setPatterns(initialPatterns);
-  }, [initialPatterns]);
+  }
 
   const reloadPatterns = useCallback(async (options?: { silent?: boolean }) => {
     if (!options?.silent) {

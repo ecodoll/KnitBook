@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import AppShell from "@/components/knitbook/layout/AppShell";
-import PatternsScreen from "@/app/patterns/PatternsScreen";
+import PatternsScreen from "@/app/(main)/patterns/PatternsScreen";
 import { getPatternsPageData } from "@/lib/knitbook/pattern-data";
 
 export const metadata: Metadata = {
@@ -24,11 +23,7 @@ const PatternsPage = async () => {
     redirect("/login");
   }
 
-  return (
-    <AppShell user={data.user}>
-      <PatternsScreen initialPatterns={data.patterns} />
-    </AppShell>
-  );
+  return <PatternsScreen initialPatterns={data.patterns} />;
 };
 
 export default PatternsPage;

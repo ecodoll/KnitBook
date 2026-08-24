@@ -1,6 +1,7 @@
+import { cache } from "react";
 import type { Pattern, PatternDetail } from "@/components/knitbook/types";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
-import { getAppHeaderUser } from "@/lib/knitbook/app-user";
+import { getAppHeaderUser, getAuthUser } from "@/lib/knitbook/app-user";
 import {
   mapPattern,
   mapPatternDetail,
@@ -49,21 +50,18 @@ const createSignedPdfUrl = async (storagePath: string | null) => {
 /**
  * 도안 목록 페이지 초기 데이터를 불러온다.
  */
-const getPatternsPageData = async (): Promise<PatternsPageData | null> => {
+const getPatternsPageData = cache(async (): Promise<PatternsPageData | null> => {
   const user = await getAppHeaderUser();
   if (!user) {
     return null;
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-
+  const authUser = await getAuthUser();
   if (!authUser) {
     return null;
   }
 
+  const supabase = await createClient();
   const { data, error } = await supabase
     .from("patterns")
     .select(
@@ -84,12 +82,12 @@ const getPatternsPageData = async (): Promise<PatternsPageData | null> => {
     user,
     patterns: ((data ?? []) as PatternRow[]).map(mapPattern),
   };
-};
+});
 
 /**
  * 도안 상세(뷰어) 페이지 초기 데이터를 불러온다.
  */
-const getPatternDetailPageData = async (
+const getPatternDetailPageData = cache(async (
   patternId: string
 ): Promise<PatternDetailPageData | null> => {
   const user = await getAppHeaderUser();
@@ -97,15 +95,12 @@ const getPatternDetailPageData = async (
     return null;
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser();
-
+  const authUser = await getAuthUser();
   if (!authUser) {
     return null;
   }
 
+  const supabase = await createClient();
   const { data: patternRow, error: patternError } = await supabase
     .from("patterns")
     .select(
@@ -126,11 +121,15 @@ const getPatternDetailPageData = async (
     return null;
   }
 
-  const { data: pageRows, error: pagesError } = await supabase
-    .from("pattern_pages")
-    .select("id, page_number, bookmark, memo")
-    .eq("pattern_id", patternId)
-    .order("page_number", { ascending: true });
+  const [{ data: pageRows, error: pagesError }, signedPdfUrl] =
+    await Promise.all([
+      supabase
+        .from("pattern_pages")
+        .select("id, page_number, bookmark, memo")
+        .eq("pattern_id", patternId)
+        .order("page_number", { ascending: true }),
+      createSignedPdfUrl((patternRow as PatternRow).pdf_url),
+    ]);
 
   if (pagesError) {
     if (process.env.NODE_ENV === "development") {
@@ -138,10 +137,6 @@ const getPatternDetailPageData = async (
     }
     throw new Error("도안 메모를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
-
-  const signedPdfUrl = await createSignedPdfUrl(
-    (patternRow as PatternRow).pdf_url
-  );
 
   return {
     user,
@@ -151,6 +146,6 @@ const getPatternDetailPageData = async (
       signedPdfUrl
     ),
   };
-};
+});
 
 export { getPatternsPageData, getPatternDetailPageData, createSignedPdfUrl };

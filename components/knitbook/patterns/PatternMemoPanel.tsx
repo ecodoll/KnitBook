@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,11 +23,13 @@ const PatternMemoPanel = ({
   className,
 }: PatternMemoPanelProps) => {
   const [draft, setDraft] = useState(memo);
+  const [source, setSource] = useState({ pageNumber, memo });
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
+  if (pageNumber !== source.pageNumber || memo !== source.memo) {
+    setSource({ pageNumber, memo });
     setDraft(memo);
-  }, [memo, pageNumber]);
+  }
 
   const handleBlur = async () => {
     if (draft === memo) {
