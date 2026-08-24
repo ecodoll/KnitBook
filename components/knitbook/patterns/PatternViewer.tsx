@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -88,13 +89,12 @@ const PatternViewer = ({
         )}
         {isLoading ? (
           <div
-            className="absolute inset-0 z-10 flex items-center justify-center bg-muted/80"
+            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/80"
             role="status"
             aria-live="polite"
           >
-            <p className="text-sm text-muted-foreground">
-              도안을 불러오는 중이에요…
-            </p>
+            <KnitSpinner className="size-8 text-primary" label="도안을 불러오는 중" />
+            <p className="text-sm text-muted-foreground">도안을 불러오는 중이에요…</p>
           </div>
         ) : null}
       </div>

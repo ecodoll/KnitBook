@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type {
   Pattern,
   PatternDifficulty,
@@ -7,12 +8,8 @@ import type {
   YarnInventorySummary,
 } from "@/components/knitbook/types";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
+import { getAppHeaderUser, getAuthUser } from "@/lib/knitbook/app-user";
 import { createClient } from "@/lib/supabase/server";
-
-type UserProfileRow = {
-  nickname: string | null;
-  email: string | null;
-};
 
 type ProjectRow = {
   id: string;
@@ -72,7 +69,6 @@ export type HomeDashboardData = {
 };
 
 const LOW_STOCK_GRAMS = 100;
-const JWT_CLOCK_SKEW_RETRY_MS = 1500;
 
 type SupabaseLikeError = {
   code?: string;
@@ -101,30 +97,6 @@ const formatSupabaseError = (error: unknown) => {
 };
 
 /**
- * JWT 발급 시각이 서버보다 앞선(시계 오차) 오류인지 판별한다.
- */
-const isJwtIssuedAtFutureError = (error: unknown) => {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  const typed = error as SupabaseLikeError;
-  return (
-    typed.code === "PGRST303" ||
-    (typed.message ?? "").toLowerCase().includes("jwt issued at future")
-  );
-};
-
-/**
- * 지정 ms 동안 대기한다.
- */
-const wait = (ms: number) => {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-};
-
-/**
  * 숫자형 DB 값을 number로 안전하게 변환한다.
  */
 const toNumber = (value: number | string | null | undefined) => {
@@ -136,34 +108,6 @@ const toNumber = (value: number | string | null | undefined) => {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
-};
-
-/**
- * 인증 사용자에서 표시용 닉네임을 고른다.
- */
-const resolveNickname = (
-  profile: UserProfileRow | null,
-  authUser: {
-    email?: string | null;
-    user_metadata?: Record<string, unknown>;
-  }
-) => {
-  const fromProfile = profile?.nickname?.trim();
-  if (fromProfile) {
-    return fromProfile;
-  }
-
-  const fromMeta = authUser.user_metadata?.nickname;
-  if (typeof fromMeta === "string" && fromMeta.trim()) {
-    return fromMeta.trim();
-  }
-
-  const email = profile?.email ?? authUser.email ?? "";
-  if (email.includes("@")) {
-    return email.split("@")[0] || "뜨개인";
-  }
-
-  return "뜨개인";
 };
 
 /**
@@ -239,105 +183,18 @@ const mapYarn = (row: YarnRow): Yarn => {
 /**
  * 로그인한 사용자의 홈 대시보드 데이터를 불러온다.
  */
-const getHomeDashboardData = async (): Promise<HomeDashboardData | null> => {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[홈 사용자 조회 실패]", formatSupabaseError(authError));
-    }
-    return null;
-  }
-
+const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> => {
+  const user = await getAuthUser();
   if (!user) {
     return null;
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("users")
-    .select("nickname, email")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  let resolvedProfile = (profile as UserProfileRow | null) ?? null;
-
-  if (profileError) {
-    if (isJwtIssuedAtFutureError(profileError)) {
-      // PC 시계가 서버보다 앞설 때 잠시 후 한 번 더 시도한다.
-      if (process.env.NODE_ENV === "development") {
-        console.warn(
-          "[프로필 조회] JWT 시계 오차(PGRST303) 감지, 재시도합니다.",
-          formatSupabaseError(profileError)
-        );
-      }
-
-      await wait(JWT_CLOCK_SKEW_RETRY_MS);
-      const { data: retriedProfile, error: retryError } = await supabase
-        .from("users")
-        .select("nickname, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (retryError) {
-        if (process.env.NODE_ENV === "development") {
-          console.warn(
-            "[프로필 조회] 재시도 후에도 실패해 Auth 메타데이터로 표시합니다. PC 시계(자동 시간 동기화)를 확인해 주세요.",
-            formatSupabaseError(retryError)
-          );
-        }
-      } else {
-        resolvedProfile = (retriedProfile as UserProfileRow | null) ?? null;
-      }
-    } else if (process.env.NODE_ENV === "development") {
-      console.error("[프로필 조회 실패]", formatSupabaseError(profileError));
-    }
+  const headerUser = await getAppHeaderUser();
+  if (!headerUser) {
+    return null;
   }
 
-  // 프로필이 없으면 Auth 메타데이터로 보강 생성한다.
-  if (!resolvedProfile) {
-    const nickname = resolveNickname(null, user);
-    const { data: upserted, error: upsertError } = await supabase
-      .from("users")
-      .upsert(
-        {
-          id: user.id,
-          email: user.email,
-          nickname,
-        },
-        { onConflict: "id" }
-      )
-      .select("nickname, email")
-      .maybeSingle();
-
-    if (upsertError) {
-      if (
-        isJwtIssuedAtFutureError(upsertError) &&
-        process.env.NODE_ENV === "development"
-      ) {
-        console.warn(
-          "[프로필 생성] JWT 시계 오차로 DB 저장을 건너뜁니다.",
-          formatSupabaseError(upsertError)
-        );
-      } else if (process.env.NODE_ENV === "development") {
-        console.error("[프로필 생성 실패]", formatSupabaseError(upsertError));
-      }
-    }
-
-    resolvedProfile = (upserted as UserProfileRow | null) ?? {
-      nickname,
-      email: user.email ?? null,
-    };
-  }
-
-  const headerUser: AppHeaderUser = {
-    nickname: resolveNickname(resolvedProfile, user),
-    email: resolvedProfile?.email ?? user.email ?? undefined,
-  };
-
+  const supabase = await createClient();
   const [
     { data: projectRows, error: projectsError },
     { data: patternRows, error: patternsError },
@@ -363,7 +220,7 @@ const getHomeDashboardData = async (): Promise<HomeDashboardData | null> => {
     supabase
       .from("yarns")
       .select(
-        "id, brand, product_name, color_name, color_code, lot_number, material, weight_gram, remaining_weight, quantity, thickness, recommended_needle, yarn_image_url, is_in_use"
+        "id, brand, product_name, color_name, color_code, remaining_weight, quantity, yarn_image_url, is_in_use"
       )
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
@@ -382,13 +239,14 @@ const getHomeDashboardData = async (): Promise<HomeDashboardData | null> => {
   const typedProjects = (projectRows ?? []) as ProjectRow[];
   const projectIds = typedProjects.map((project) => project.id);
 
-  let latestLogsByProject = new Map<string, ProjectLogRow>();
+  const latestLogsByProject = new Map<string, ProjectLogRow>();
   if (projectIds.length > 0) {
     const { data: logRows, error: logsError } = await supabase
       .from("project_logs")
       .select("project_id, logged_on, memo, created_at")
       .in("project_id", projectIds)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .limit(Math.max(projectIds.length * 8, 24));
 
     if (logsError && process.env.NODE_ENV === "development") {
       console.error("[작업 기록 조회 실패]", formatSupabaseError(logsError));
@@ -432,6 +290,6 @@ const getHomeDashboardData = async (): Promise<HomeDashboardData | null> => {
     patterns,
     yarnSummary,
   };
-};
+});
 
 export { getHomeDashboardData };

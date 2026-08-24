@@ -9,6 +9,7 @@ import PatternViewer from "@/components/knitbook/patterns/PatternViewer";
 import PatternMemoPanel from "@/components/knitbook/patterns/PatternMemoPanel";
 import StartProjectDialog from "@/components/knitbook/patterns/StartProjectDialog";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
+import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import {
   deletePattern,
   fetchPatternDetail,
@@ -27,7 +28,9 @@ const PatternPdfCanvas = dynamic(
   {
     ssr: false,
     loading: () => (
-      <p className="text-sm text-muted-foreground">PDF를 불러오는 중이에요…</p>
+      <div className="flex justify-center py-8">
+        <KnitSpinner className="size-8 text-primary" label="PDF를 불러오는 중" />
+      </div>
     ),
   }
 );

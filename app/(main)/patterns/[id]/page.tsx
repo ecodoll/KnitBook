@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import AppShell from "@/components/knitbook/layout/AppShell";
-import PatternDetailScreen from "@/app/patterns/[id]/PatternDetailScreen";
+import PatternDetailScreen from "@/app/(main)/patterns/[id]/PatternDetailScreen";
 import { getPatternDetailPageData } from "@/lib/knitbook/pattern-data";
 
 type PatternDetailPageProps = PageProps<"/patterns/[id]">;
@@ -44,11 +43,9 @@ const PatternDetailPage = async ({ params }: PatternDetailPageProps) => {
   }
 
   return (
-    <AppShell user={data.user} showBottomNav={false} className="px-0 pt-2">
-      <div className="px-4">
-        <PatternDetailScreen key={data.pattern.id} initialPattern={data.pattern} />
-      </div>
-    </AppShell>
+    <div className="-mx-4 -mt-2 px-4 pt-2">
+      <PatternDetailScreen key={data.pattern.id} initialPattern={data.pattern} />
+    </div>
   );
 };
 

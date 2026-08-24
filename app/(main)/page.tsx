@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import AppShell from "@/components/knitbook/layout/AppShell";
 import HomeDashboard from "@/app/HomeDashboard";
 import { getHomeDashboardData } from "@/lib/knitbook/home-data";
 
@@ -21,14 +20,12 @@ const HomePage = async () => {
   }
 
   return (
-    <AppShell user={dashboard.user}>
-      <HomeDashboard
-        nickname={dashboard.user.nickname}
-        initialProjects={dashboard.projects}
-        initialPatterns={dashboard.patterns}
-        initialYarnSummary={dashboard.yarnSummary}
-      />
-    </AppShell>
+    <HomeDashboard
+      nickname={dashboard.user.nickname}
+      initialProjects={dashboard.projects}
+      initialPatterns={dashboard.patterns}
+      initialYarnSummary={dashboard.yarnSummary}
+    />
   );
 };
 

@@ -95,7 +95,6 @@ const SignupScreen = () => {
 
       if (data.session) {
         router.push("/");
-        router.refresh();
         return;
       }
 
