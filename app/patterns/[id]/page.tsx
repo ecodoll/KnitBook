@@ -46,7 +46,7 @@ const PatternDetailPage = async ({ params }: PatternDetailPageProps) => {
   return (
     <AppShell user={data.user} showBottomNav={false} className="px-0 pt-2">
       <div className="px-4">
-        <PatternDetailScreen initialPattern={data.pattern} />
+        <PatternDetailScreen key={data.pattern.id} initialPattern={data.pattern} />
       </div>
     </AppShell>
   );
