@@ -14,6 +14,8 @@ export type Pattern = {
   title: string;
   designer?: string;
   coverImageUrl?: string;
+  /** Storage에 저장된 PDF 경로. 표지가 없을 때 첫 페이지에서 추출한다. */
+  pdfStoragePath?: string;
   difficulty?: PatternDifficulty;
   category?: string;
   tags?: string[];
