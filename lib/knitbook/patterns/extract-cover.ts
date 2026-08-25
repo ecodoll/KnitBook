@@ -124,59 +124,18 @@ const sampleLumaVariance = (canvas: HTMLCanvasElement) => {
 };
 
 /**
- * 여백을 잘라 본문·사진 영역만 남긴다.
+ * 지정한 사각형을 캔버스에서 잘라 낸다.
  */
-const cropWhitespace = (canvas: HTMLCanvasElement) => {
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) {
-    return canvas;
-  }
-
-  const { width, height } = canvas;
-  const { data } = context.getImageData(0, 0, width, height);
-  const step = Math.max(1, Math.floor(Math.min(width, height) / 360));
-  let minX = width;
-  let minY = height;
-  let maxX = 0;
-  let maxY = 0;
-
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const index = (y * width + x) * 4;
-      const alpha = data[index + 3];
-      if (alpha < 16) {
-        continue;
-      }
-
-      const isInk =
-        data[index] < 248 || data[index + 1] < 248 || data[index + 2] < 248;
-      if (!isInk) {
-        continue;
-      }
-
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
-    }
-  }
-
-  if (maxX <= minX || maxY <= minY) {
-    return canvas;
-  }
-
-  const pad = Math.round(Math.min(width, height) * 0.03);
-  minX = Math.max(0, minX - pad);
-  minY = Math.max(0, minY - pad);
-  maxX = Math.min(width - 1, maxX + pad);
-  maxY = Math.min(height - 1, maxY + pad);
-
+const cropCanvas = (
+  canvas: HTMLCanvasElement,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+) => {
   const cropWidth = maxX - minX + 1;
   const cropHeight = maxY - minY + 1;
   if (cropWidth < 40 || cropHeight < 40) {
-    return canvas;
-  }
-  if (cropWidth * cropHeight > width * height * 0.92) {
     return canvas;
   }
 
@@ -200,6 +159,118 @@ const cropWhitespace = (canvas: HTMLCanvasElement) => {
     cropHeight
   );
   return cropped;
+};
+
+/**
+ * 픽셀이 흰 여백이 아닌지 확인한다.
+ */
+const isInkPixel = (data: Uint8ClampedArray, index: number) => {
+  if (data[index + 3] < 16) {
+    return false;
+  }
+  return data[index] < 248 || data[index + 1] < 248 || data[index + 2] < 248;
+};
+
+/**
+ * 첫 페이지에서 가장 큰 그림 덩어리를 잘라 표지로 쓴다.
+ */
+const cropLargestImageRegion = (canvas: HTMLCanvasElement) => {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) {
+    return canvas;
+  }
+
+  const { width, height } = canvas;
+  const { data } = context.getImageData(0, 0, width, height);
+  const cell = Math.max(4, Math.floor(Math.min(width, height) / 90));
+  const cols = Math.ceil(width / cell);
+  const rows = Math.ceil(height / cell);
+  const grid = new Uint8Array(cols * rows);
+
+  for (let row = 0; row < rows; row += 1) {
+    for (let col = 0; col < cols; col += 1) {
+      const x = Math.min(width - 1, col * cell + Math.floor(cell / 2));
+      const y = Math.min(height - 1, row * cell + Math.floor(cell / 2));
+      if (isInkPixel(data, (y * width + x) * 4)) {
+        grid[row * cols + col] = 1;
+      }
+    }
+  }
+
+  const seen = new Uint8Array(cols * rows);
+  let bestCount = 0;
+  let bestMinX = 0;
+  let bestMinY = 0;
+  let bestMaxX = 0;
+  let bestMaxY = 0;
+
+  for (let start = 0; start < grid.length; start += 1) {
+    if (!grid[start] || seen[start]) {
+      continue;
+    }
+
+    let count = 0;
+    let minCol = cols;
+    let minRow = rows;
+    let maxCol = 0;
+    let maxRow = 0;
+    const queue = [start];
+    seen[start] = 1;
+
+    while (queue.length > 0) {
+      const index = queue.pop() as number;
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      count += 1;
+      if (col < minCol) minCol = col;
+      if (row < minRow) minRow = row;
+      if (col > maxCol) maxCol = col;
+      if (row > maxRow) maxRow = row;
+
+      const neighbors = [
+        index - 1,
+        index + 1,
+        index - cols,
+        index + cols,
+      ];
+      for (const next of neighbors) {
+        if (next < 0 || next >= grid.length || seen[next] || !grid[next]) {
+          continue;
+        }
+        const nextCol = next % cols;
+        if (Math.abs(nextCol - col) + Math.abs(Math.floor(next / cols) - row) !== 1) {
+          continue;
+        }
+        seen[next] = 1;
+        queue.push(next);
+      }
+    }
+
+    if (count > bestCount) {
+      bestCount = count;
+      bestMinX = minCol * cell;
+      bestMinY = minRow * cell;
+      bestMaxX = Math.min(width - 1, (maxCol + 1) * cell - 1);
+      bestMaxY = Math.min(height - 1, (maxRow + 1) * cell - 1);
+    }
+  }
+
+  if (bestCount === 0) {
+    return canvas;
+  }
+
+  const pad = Math.round(Math.min(width, height) * 0.02);
+  const minX = Math.max(0, bestMinX - pad);
+  const minY = Math.max(0, bestMinY - pad);
+  const maxX = Math.min(width - 1, bestMaxX + pad);
+  const maxY = Math.min(height - 1, bestMaxY + pad);
+  const area = (maxX - minX + 1) * (maxY - minY + 1);
+
+  if (area < width * height * 0.08) {
+    return canvas;
+  }
+
+  return cropCanvas(canvas, minX, minY, maxX, maxY);
 };
 
 /**
@@ -399,7 +470,7 @@ const renderPageCover = async (page: PDFPageProxy) => {
     annotationMode: AnnotationMode.DISABLE,
   }).promise;
 
-  return cropWhitespace(canvas);
+  return cropLargestImageRegion(canvas);
 };
 
 /**
