@@ -1,26 +1,20 @@
 import { cache } from "react";
 import type { Pattern, PatternDetail } from "@/components/knitbook/types";
-import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
-import { getAppHeaderUser, getAuthUser } from "@/lib/knitbook/app-user";
+import { getAuthUser } from "@/lib/knitbook/app-user";
 import {
   mapPattern,
   mapPatternDetail,
   type PatternPageRow,
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
-import {
-  createSignedCoverUrls,
-  createSignedStorageUrl,
-} from "@/lib/knitbook/patterns/signed-url";
+import { createSignedStorageUrl } from "@/lib/knitbook/patterns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type PatternsPageData = {
-  user: AppHeaderUser;
   patterns: Pattern[];
 };
 
 export type PatternDetailPageData = {
-  user: AppHeaderUser;
   pattern: PatternDetail;
 };
 
@@ -34,13 +28,9 @@ const createSignedPdfUrl = async (storagePath: string | null) => {
 
 /**
  * 도안 목록 페이지 초기 데이터를 불러온다.
+ * 표지 서명은 클라이언트에서 처리해 목록 전환을 빠르게 한다.
  */
 const getPatternsPageData = cache(async (): Promise<PatternsPageData | null> => {
-  const user = await getAppHeaderUser();
-  if (!user) {
-    return null;
-  }
-
   const authUser = await getAuthUser();
   if (!authUser) {
     return null;
@@ -64,16 +54,9 @@ const getPatternsPageData = cache(async (): Promise<PatternsPageData | null> => 
   }
 
   const rows = (data ?? []) as PatternRow[];
-  const signedCovers = await createSignedCoverUrls(
-    supabase,
-    rows.map((row) => row.cover_image_url)
-  );
 
   return {
-    user,
-    patterns: rows.map((row, index) =>
-      mapPattern(row, { signedCoverUrl: signedCovers[index] })
-    ),
+    patterns: rows.map((row) => mapPattern(row)),
   };
 });
 
@@ -83,11 +66,6 @@ const getPatternsPageData = cache(async (): Promise<PatternsPageData | null> => 
 const getPatternDetailPageData = cache(async (
   patternId: string
 ): Promise<PatternDetailPageData | null> => {
-  const user = await getAppHeaderUser();
-  if (!user) {
-    return null;
-  }
-
   const authUser = await getAuthUser();
   if (!authUser) {
     return null;
@@ -134,7 +112,6 @@ const getPatternDetailPageData = cache(async (
   }
 
   return {
-    user,
     pattern: mapPatternDetail(
       row,
       (pageRows ?? []) as PatternPageRow[],

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import HomeDashboard from "@/app/HomeDashboard";
+import LoadingState from "@/components/knitbook/shared/LoadingState";
 import { getHomeDashboardData } from "@/lib/knitbook/home-data";
 
 export const metadata: Metadata = {
@@ -10,9 +12,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * KnitBook 메인(홈) 대시보드 페이지이다.
+ * 홈 대시보드 본문을 불러와 렌더한다.
  */
-const HomePage = async () => {
+const HomeDashboardLoader = async () => {
   const dashboard = await getHomeDashboardData();
 
   if (!dashboard) {
@@ -26,6 +28,18 @@ const HomePage = async () => {
       initialPatterns={dashboard.patterns}
       initialYarnSummary={dashboard.yarnSummary}
     />
+  );
+};
+
+/**
+ * KnitBook 메인(홈) 대시보드 페이지이다.
+ * 셸은 레이아웃에서 먼저 그리고, 본문만 Suspense로 스트리밍한다.
+ */
+const HomePage = () => {
+  return (
+    <Suspense fallback={<LoadingState variant="spinner" />}>
+      <HomeDashboardLoader />
+    </Suspense>
   );
 };
 

@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { after } from "next/server";
 import type { User } from "@supabase/supabase-js";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
 import { createClient } from "@/lib/supabase/server";
@@ -107,23 +108,22 @@ const getAppHeaderUser = cache(async (): Promise<AppHeaderUser | null> => {
     }
   }
 
+  // 프로필이 없으면 Auth 메타로 즉시 응답하고, DB 생성은 응답 이후에 한다.
   if (!resolved && !profileError) {
     const nickname = resolveNickname(null, user);
-    const { data: upserted, error: upsertError } = await supabase
-      .from("users")
-      .upsert(
+    resolved = { nickname, email: user.email ?? null };
+
+    after(async () => {
+      const { error: upsertError } = await supabase.from("users").upsert(
         {
           id: user.id,
           email: user.email,
           nickname,
         },
         { onConflict: "id" }
-      )
-      .select("nickname, email")
-      .maybeSingle();
+      );
 
-    if (upsertError) {
-      if (process.env.NODE_ENV === "development") {
+      if (upsertError && process.env.NODE_ENV === "development") {
         if (isJwtIssuedAtFutureError(upsertError)) {
           console.warn(
             "[프로필 생성] JWT 시계 오차로 DB 저장을 건너뜁니다.",
@@ -133,13 +133,7 @@ const getAppHeaderUser = cache(async (): Promise<AppHeaderUser | null> => {
           console.error("[프로필 생성 실패]", upsertError.message);
         }
       }
-      resolved = { nickname, email: user.email ?? null };
-    } else {
-      resolved = (upserted as UserProfileRow | null) ?? {
-        nickname,
-        email: user.email ?? null,
-      };
-    }
+    });
   }
 
   if (!resolved) {

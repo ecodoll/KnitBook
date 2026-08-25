@@ -38,13 +38,12 @@ const AuthSync = () => {
         });
       }
 
-      // 구독 직후·토큰 갱신은 이미 서버 세션에 반영되어 있어 전체 새로고침하지 않는다.
-      if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") {
-        return;
-      }
-
-      if (isSignedIn && onAuthPage && event === "SIGNED_IN") {
-        router.replace("/");
+      // 로그인 직후 이동은 LoginScreen에서 처리한다. (이중 replace·쿠키 레이스 방지)
+      if (
+        event === "INITIAL_SESSION" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "SIGNED_IN"
+      ) {
         return;
       }
 

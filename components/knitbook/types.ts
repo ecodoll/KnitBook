@@ -13,7 +13,10 @@ export type Pattern = {
   id: string;
   title: string;
   designer?: string;
+  /** 표시용 표지 URL (공개 URL 또는 서명 URL) */
   coverImageUrl?: string;
+  /** Storage에 저장된 표지 경로. 클라이언트에서 서명해 표시한다. */
+  coverStoragePath?: string;
   /** Storage에 저장된 PDF 경로. 표지가 없을 때 첫 페이지에서 추출한다. */
   pdfStoragePath?: string;
   difficulty?: PatternDifficulty;

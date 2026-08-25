@@ -3,12 +3,16 @@
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
 import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
-import { ensurePatternCover } from "@/lib/knitbook/pattern-client";
+import {
+  ensurePatternCover,
+  resolvePatternCoverUrl,
+} from "@/lib/knitbook/pattern-client";
 
 type PatternCoverProps = {
   patternId: string;
   title: string;
   coverImageUrl?: string;
+  coverStoragePath?: string;
   pdfStoragePath?: string;
 };
 
@@ -19,44 +23,64 @@ const PatternCover = ({
   patternId,
   title,
   coverImageUrl,
+  coverStoragePath,
   pdfStoragePath,
 }: PatternCoverProps) => {
-  const [generatedSrc, setGeneratedSrc] = useState<string>();
+  const [resolvedSrc, setResolvedSrc] = useState<string>();
   const [didFail, setDidFail] = useState(false);
-  const src = coverImageUrl ?? generatedSrc;
-  const isGenerating = !src && Boolean(pdfStoragePath) && !didFail;
+  const src = coverImageUrl ?? resolvedSrc;
+  const isGenerating = !src && Boolean(coverStoragePath || pdfStoragePath) && !didFail;
 
   useEffect(() => {
-    if (src || !pdfStoragePath) {
+    if (coverImageUrl) {
       return;
     }
 
     let cancelled = false;
 
-    void ensurePatternCover(patternId, pdfStoragePath)
-      .then((url) => {
-        if (cancelled) {
-          return;
+    const resolveCover = async () => {
+      try {
+        if (coverStoragePath) {
+          const signed = await resolvePatternCoverUrl(coverStoragePath);
+          if (cancelled) {
+            return;
+          }
+          if (signed) {
+            setResolvedSrc(signed);
+            return;
+          }
         }
-        if (url) {
-          setGeneratedSrc(url);
-          return;
+
+        if (pdfStoragePath) {
+          const generated = await ensurePatternCover(patternId, pdfStoragePath);
+          if (cancelled) {
+            return;
+          }
+          if (generated) {
+            setResolvedSrc(generated);
+            return;
+          }
         }
-        setDidFail(true);
-      })
-      .catch((error) => {
+
+        if (!cancelled) {
+          setDidFail(true);
+        }
+      } catch (error) {
         if (process.env.NODE_ENV === "development") {
-          console.error("[도안 썸네일 생성 실패]", error);
+          console.error("[도안 썸네일 표시 실패]", error);
         }
         if (!cancelled) {
           setDidFail(true);
         }
-      });
+      }
+    };
+
+    void resolveCover();
 
     return () => {
       cancelled = true;
     };
-  }, [patternId, pdfStoragePath, src]);
+  }, [patternId, coverImageUrl, coverStoragePath, pdfStoragePath]);
 
   if (src) {
     return (

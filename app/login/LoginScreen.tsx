@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import LoginForm, {
   type LoginFormValues,
@@ -51,7 +50,6 @@ const getLoginErrorMessage = (error: unknown) => {
  * 로그인 화면 본문(로고·소개·폼)을 구성한다.
  */
 const LoginScreen = () => {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
 
@@ -68,8 +66,11 @@ const LoginScreen = () => {
         throw error;
       }
 
+      // 쿠키 세션이 반영된 뒤 한 번에 홈으로 이동해 middleware 바운스를 줄인다.
+      await supabase.auth.getSession();
       setIsRedirecting(true);
-      router.replace("/");
+      window.location.assign("/");
+      return;
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[로그인 실패]", error);

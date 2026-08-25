@@ -34,6 +34,13 @@ type MapPatternOptions = {
 };
 
 /**
+ * http(s)로 시작하는 공개 URL인지 확인한다.
+ */
+const isHttpUrl = (value: string | null | undefined): value is string => {
+  return typeof value === "string" && /^https?:\/\//i.test(value);
+};
+
+/**
  * DB 도안 행을 UI Pattern 타입으로 변환한다.
  */
 const mapPattern = (row: PatternRow, options?: MapPatternOptions): Pattern => {
@@ -46,11 +53,18 @@ const mapPattern = (row: PatternRow, options?: MapPatternOptions): Pattern => {
       ? (row.difficulty as PatternDifficulty)
       : undefined;
 
+  const coverRaw = row.cover_image_url;
+  const signedOrPublic =
+    options?.signedCoverUrl ?? (isHttpUrl(coverRaw) ? coverRaw : undefined);
+  const coverStoragePath =
+    coverRaw && !isHttpUrl(coverRaw) ? coverRaw : undefined;
+
   return {
     id: row.id,
     title: row.title,
     designer: row.designer ?? undefined,
-    coverImageUrl: options?.signedCoverUrl,
+    coverImageUrl: signedOrPublic,
+    coverStoragePath,
     pdfStoragePath: row.pdf_url ?? undefined,
     difficulty,
     category: row.category ?? undefined,

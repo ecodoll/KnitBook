@@ -8,7 +8,6 @@ import {
   PATTERN_COVER_CONTENT_TYPE,
   PATTERN_PDF_BUCKET,
 } from "@/lib/knitbook/patterns/constants";
-import { extractPatternCoverFromPdf } from "@/lib/knitbook/patterns/extract-cover";
 import {
   mapPattern,
   mapPatternDetail,
@@ -16,13 +15,22 @@ import {
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
 import {
-  createSignedCoverUrls,
   createSignedStorageUrl,
 } from "@/lib/knitbook/patterns/signed-url";
 import { createClient } from "@/lib/supabase/client";
 
 const PATTERN_SELECT =
   "id, title, designer, cover_image_url, pdf_url, difficulty, category, tags, favorite, notes, source, last_opened_at, created_at";
+
+/**
+ * pdf.js(표지 추출)는 브라우저 전용이라 필요할 때만 동적 로드한다.
+ */
+const loadExtractPatternCover = async () => {
+  const { extractPatternCoverFromPdf } = await import(
+    "@/lib/knitbook/patterns/extract-cover"
+  );
+  return extractPatternCoverFromPdf;
+};
 
 /**
  * 로그인 사용자 ID를 반환한다. 없으면 오류를 던진다.
@@ -71,14 +79,8 @@ const fetchPatterns = async (): Promise<Pattern[]> => {
   }
 
   const rows = (data ?? []) as PatternRow[];
-  const signedCovers = await createSignedCoverUrls(
-    supabase,
-    rows.map((row) => row.cover_image_url)
-  );
-
-  return rows.map((row, index) =>
-    mapPattern(row, { signedCoverUrl: signedCovers[index] })
-  );
+  // 목록 전환을 막지 않도록 표지 서명은 클라이언트(PatternCover)에서 처리한다.
+  return rows.map((row) => mapPattern(row));
 };
 
 /**
@@ -155,6 +157,7 @@ const uploadPattern = async (values: PatternUploadValues): Promise<Pattern> => {
   const patternId = (inserted as PatternRow).id;
   const storagePath = buildPatternPdfPath(userId, patternId);
   const coverPath = buildPatternCoverPath(userId, patternId);
+  const extractPatternCoverFromPdf = await loadExtractPatternCover();
   const coverPromise = extractPatternCoverFromPdf(values.file);
 
   const { error: uploadError } = await supabase.storage
@@ -397,6 +400,7 @@ const ensurePatternCover = async (
     }
 
     const signedPdfUrl = await getSignedPdfUrl(pdfStoragePath);
+    const extractPatternCoverFromPdf = await loadExtractPatternCover();
     const coverBlob = await extractPatternCoverFromPdf(signedPdfUrl);
     if (!coverBlob) {
       return undefined;
@@ -433,6 +437,14 @@ const ensurePatternCover = async (
   return job;
 };
 
+/**
+ * 표지 Storage 경로를 표시용 서명 URL로 만든다.
+ */
+const resolvePatternCoverUrl = async (coverStoragePath: string) => {
+  const supabase = createClient();
+  return createSignedStorageUrl(supabase, coverStoragePath);
+};
+
 export {
   fetchPatterns,
   fetchPatternDetail,
@@ -443,4 +455,5 @@ export {
   createProjectFromPattern,
   getSignedPdfUrl,
   ensurePatternCover,
+  resolvePatternCoverUrl,
 };

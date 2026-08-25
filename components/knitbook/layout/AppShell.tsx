@@ -2,20 +2,17 @@
 
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import AppHeader, {
-  type AppHeaderUser,
-} from "@/components/knitbook/layout/AppHeader";
 import BottomNav from "@/components/knitbook/layout/BottomNav";
 import { cn } from "@/lib/utils";
 
 type AppShellProps = {
   children: ReactNode;
+  /** 상단 헤더 슬롯 (Suspense로 스트리밍 가능) */
+  header?: ReactNode;
   /** 상단 헤더 표시 여부 */
   showHeader?: boolean;
   /** 하단 네비게이션 표시 여부. 생략 시 도안 뷰어에서는 숨긴다. */
   showBottomNav?: boolean;
-  /** 헤더에 표시할 로그인 사용자 */
-  user?: AppHeaderUser;
   className?: string;
 };
 
@@ -34,9 +31,9 @@ const isPatternViewerPath = (pathname: string) => {
  */
 const AppShell = ({
   children,
+  header,
   showHeader = true,
   showBottomNav,
-  user,
   className,
 }: AppShellProps) => {
   const pathname = usePathname();
@@ -44,7 +41,7 @@ const AppShell = ({
 
   return (
     <div className="flex min-h-full flex-1 flex-col bg-background">
-      {showHeader && user ? <AppHeader user={user} /> : null}
+      {showHeader ? header : null}
       <main
         className={cn(
           "mx-auto w-full max-w-lg flex-1 px-4 pt-4",

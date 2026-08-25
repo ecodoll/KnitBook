@@ -1,7 +1,6 @@
 import { cache } from "react";
 import type {
   Pattern,
-  PatternDifficulty,
   Project,
   ProjectStatus,
   Yarn,
@@ -9,7 +8,10 @@ import type {
 } from "@/components/knitbook/types";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
 import { getAppHeaderUser, getAuthUser } from "@/lib/knitbook/app-user";
-import { createSignedCoverUrls } from "@/lib/knitbook/patterns/signed-url";
+import {
+  mapPattern,
+  type PatternRow,
+} from "@/lib/knitbook/patterns/map-pattern";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -25,33 +27,14 @@ type ProjectRow = {
   updated_at: string;
 };
 
-type PatternRow = {
-  id: string;
-  title: string;
-  designer: string | null;
-  cover_image_url: string | null;
-  pdf_url: string | null;
-  difficulty: number | null;
-  category: string | null;
-  tags: string[] | null;
-  favorite: boolean | null;
-  last_opened_at: string | null;
-  created_at: string;
-};
-
 type YarnRow = {
   id: string;
   brand: string;
   product_name: string;
   color_name: string | null;
   color_code: string | null;
-  lot_number: string | null;
-  material: string | null;
-  weight_gram: number | string | null;
   remaining_weight: number | string | null;
   quantity: number | string | null;
-  thickness: string | null;
-  recommended_needle: string | null;
   yarn_image_url: string | null;
   is_in_use: boolean | null;
 };
@@ -71,6 +54,7 @@ export type HomeDashboardData = {
 };
 
 const LOW_STOCK_GRAMS = 100;
+const RECENT_YARN_LIMIT = 3;
 
 type SupabaseLikeError = {
   code?: string;
@@ -134,34 +118,6 @@ const mapProject = (
 };
 
 /**
- * DB 도안 행을 UI Pattern 타입으로 변환한다.
- */
-const mapPattern = (row: PatternRow, signedCoverUrl?: string): Pattern => {
-  const difficulty =
-    row.difficulty === 1 ||
-    row.difficulty === 2 ||
-    row.difficulty === 3 ||
-    row.difficulty === 4 ||
-    row.difficulty === 5
-      ? (row.difficulty as PatternDifficulty)
-      : undefined;
-
-  return {
-    id: row.id,
-    title: row.title,
-    designer: row.designer ?? undefined,
-    coverImageUrl: signedCoverUrl,
-    pdfStoragePath: row.pdf_url ?? undefined,
-    difficulty,
-    category: row.category ?? undefined,
-    tags: row.tags ?? undefined,
-    isFavorite: row.favorite ?? false,
-    lastOpenedAt: row.last_opened_at ?? undefined,
-    createdAt: row.created_at,
-  };
-};
-
-/**
  * DB 실 행을 UI Yarn 타입으로 변환한다.
  */
 const mapYarn = (row: YarnRow): Yarn => {
@@ -171,13 +127,8 @@ const mapYarn = (row: YarnRow): Yarn => {
     productName: row.product_name,
     colorName: row.color_name ?? undefined,
     colorCode: row.color_code ?? undefined,
-    lotNumber: row.lot_number ?? undefined,
-    fiber: row.material ?? undefined,
-    weightGrams: toNumber(row.weight_gram),
     remainingGrams: toNumber(row.remaining_weight),
     quantity: toNumber(row.quantity),
-    yarnWeight: row.thickness ?? undefined,
-    needleSizeMm: row.recommended_needle ?? undefined,
     imageUrl: row.yarn_image_url ?? undefined,
     isInUse: row.is_in_use ?? false,
   };
@@ -192,17 +143,16 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     return null;
   }
 
-  const headerUser = await getAppHeaderUser();
-  if (!headerUser) {
-    return null;
-  }
-
   const supabase = await createClient();
+
+  // 헤더 프로필과 홈 본문 데이터를 병렬로 가져온다.
   const [
+    headerUser,
     { data: projectRows, error: projectsError },
     { data: patternRows, error: patternsError },
     { data: yarnRows, error: yarnsError },
   ] = await Promise.all([
+    getAppHeaderUser(),
     supabase
       .from("projects")
       .select(
@@ -214,7 +164,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     supabase
       .from("patterns")
       .select(
-        "id, title, designer, cover_image_url, pdf_url, difficulty, category, tags, favorite, last_opened_at, created_at"
+        "id, title, designer, cover_image_url, pdf_url, difficulty, category, tags, favorite, notes, source, last_opened_at, created_at"
       )
       .eq("user_id", user.id)
       .order("last_opened_at", { ascending: false, nullsFirst: false })
@@ -228,6 +178,10 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
   ]);
+
+  if (!headerUser) {
+    return null;
+  }
 
   if (projectsError && process.env.NODE_ENV === "development") {
     console.error("[작품 조회 실패]", formatSupabaseError(projectsError));
@@ -266,13 +220,9 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     mapProject(row, latestLogsByProject.get(row.id) ?? null)
   );
 
-  const typedPatternRows = (patternRows ?? []) as PatternRow[];
-  const signedCovers = await createSignedCoverUrls(
-    supabase,
-    typedPatternRows.map((row) => row.cover_image_url)
-  );
-  const patterns = typedPatternRows.map((row, index) =>
-    mapPattern(row, signedCovers[index])
+  // 표지 서명은 카드(PatternCover)에서 처리해 홈 전환을 막지 않는다.
+  const patterns = ((patternRows ?? []) as PatternRow[]).map((row) =>
+    mapPattern(row)
   );
   const yarns = ((yarnRows ?? []) as YarnRow[]).map(mapYarn);
 
@@ -291,7 +241,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     totalKinds: yarns.length,
     totalRemainingGrams: yarns.length > 0 ? totalRemainingGrams : undefined,
     lowStockCount,
-    recentYarns: yarns.slice(0, 3),
+    recentYarns: yarns.slice(0, RECENT_YARN_LIMIT),
   };
 
   return {

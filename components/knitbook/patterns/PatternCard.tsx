@@ -34,6 +34,7 @@ const PatternCard = ({ pattern, compact = false, className }: PatternCardProps) 
           patternId={pattern.id}
           title={pattern.title}
           coverImageUrl={pattern.coverImageUrl}
+          coverStoragePath={pattern.coverStoragePath}
           pdfStoragePath={pattern.pdfStoragePath}
         />
         {pattern.isFavorite ? (
