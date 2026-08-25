@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Maximize2,
   Minus,
+  Pencil,
   Plus,
 } from "lucide-react";
 
@@ -22,6 +23,7 @@ type PatternViewerProps = {
   onZoomChange?: (zoomPercent: number) => void;
   onToggleBookmark?: () => void;
   onToggleFullscreen?: () => void;
+  onRename?: () => void;
   isBookmarked?: boolean;
   /** PDF 캔버스/iframe 영역 */
   children?: ReactNode;
@@ -42,6 +44,7 @@ const PatternViewer = ({
   onZoomChange,
   onToggleBookmark,
   onToggleFullscreen,
+  onRename,
   isBookmarked = false,
   children,
   className,
@@ -53,8 +56,22 @@ const PatternViewer = ({
   return (
     <div className={cn("flex h-full min-h-[70vh] flex-col bg-background", className)}>
       <header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-        <h1 className="truncate text-sm font-medium">{title}</h1>
-        <div className="flex items-center gap-1">
+        <div className="flex min-w-0 flex-1 items-center gap-0.5">
+          <h1 className="truncate text-sm font-medium">{title}</h1>
+          {onRename ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="shrink-0"
+              onClick={onRename}
+              aria-label="도안 이름 변경"
+            >
+              <Pencil />
+            </Button>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-1">
           {onToggleBookmark ? (
             <Button
               type="button"
@@ -89,12 +106,12 @@ const PatternViewer = ({
         )}
         {isLoading ? (
           <div
-            className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-muted/80"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-muted/80"
             role="status"
             aria-live="polite"
+            aria-label="불러오는 중"
           >
-            <KnitSpinner className="size-8 text-primary" label="도안을 불러오는 중" />
-            <p className="text-sm text-muted-foreground">도안을 불러오는 중이에요…</p>
+            <KnitSpinner className="size-8 text-primary" aria-hidden />
           </div>
         ) : null}
       </div>

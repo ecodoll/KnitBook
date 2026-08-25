@@ -220,6 +220,32 @@ const uploadPattern = async (values: PatternUploadValues): Promise<Pattern> => {
 };
 
 /**
+ * 도안 이름을 변경한다.
+ */
+const renamePattern = async (patternId: string, title: string): Promise<Pattern> => {
+  const nextTitle = title.trim();
+  if (!nextTitle) {
+    throw new Error("도안 이름을 입력해 주세요.");
+  }
+
+  const { supabase, userId } = await requireUserId();
+
+  const { data, error } = await supabase
+    .from("patterns")
+    .update({ title: nextTitle })
+    .eq("id", patternId)
+    .eq("user_id", userId)
+    .select(PATTERN_SELECT)
+    .single();
+
+  if (error || !data) {
+    throw error ?? new Error("도안 이름을 바꾸지 못했어요.");
+  }
+
+  return mapPattern(data as PatternRow);
+};
+
+/**
  * 도안 최근 열람 시각을 갱신한다.
  */
 const touchPatternOpened = async (patternId: string) => {
@@ -449,6 +475,7 @@ export {
   fetchPatterns,
   fetchPatternDetail,
   uploadPattern,
+  renamePattern,
   touchPatternOpened,
   upsertPatternPage,
   deletePattern,

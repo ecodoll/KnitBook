@@ -2,8 +2,6 @@ import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import { cn } from "@/lib/utils";
 
 type PageLoadingProps = {
-  /** 사용자에게 보여줄 안내 문구 */
-  message?: string;
   className?: string;
   /** 화면 전체를 채울지 여부 */
   fullScreen?: boolean;
@@ -11,22 +9,20 @@ type PageLoadingProps = {
 
 /**
  * 페이지·구간 전환에 쓰는 뜨개 스피너 로딩 화면이다.
+ * 문구 없이 실타래 애니메이션만 표시한다.
  */
-const PageLoading = ({
-  message = "실을 감는 중이에요…",
-  className,
-  fullScreen = false,
-}: PageLoadingProps) => {
+const PageLoading = ({ className, fullScreen = false }: PageLoadingProps) => {
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center gap-4",
+        "flex flex-col items-center justify-center",
         fullScreen ? "min-h-full flex-1 py-16" : "min-h-[50vh] py-10",
         className
       )}
       role="status"
       aria-live="polite"
       aria-busy="true"
+      aria-label="불러오는 중"
     >
       <div className="relative flex size-[5.5rem] items-center justify-center">
         <svg
@@ -53,7 +49,6 @@ const PageLoading = ({
           <KnitSpinner className="size-9" aria-hidden />
         </span>
       </div>
-      <p className="text-sm text-muted-foreground">{message}</p>
     </div>
   );
 };

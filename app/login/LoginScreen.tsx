@@ -81,7 +81,7 @@ const LoginScreen = () => {
   };
 
   if (isRedirecting) {
-    return <PageLoading fullScreen message="KnitBook을 여는 중이에요…" />;
+    return <PageLoading fullScreen />;
   }
 
   return (

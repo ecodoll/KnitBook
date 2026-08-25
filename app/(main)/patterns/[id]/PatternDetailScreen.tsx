@@ -9,10 +9,10 @@ import PatternViewer from "@/components/knitbook/patterns/PatternViewer";
 import PatternMemoPanel from "@/components/knitbook/patterns/PatternMemoPanel";
 import StartProjectDialog from "@/components/knitbook/patterns/StartProjectDialog";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
-import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import {
   deletePattern,
   fetchPatternDetail,
+  renamePattern,
   touchPatternOpened,
   upsertPatternPage,
 } from "@/lib/knitbook/pattern-client";
@@ -22,16 +22,14 @@ import {
 } from "@/lib/knitbook/use-knitbook-toast";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Sparkles, Trash2 } from "lucide-react";
+import RenamePatternDialog from "@/components/knitbook/patterns/RenamePatternDialog";
 
 const PatternPdfCanvas = dynamic(
   () => import("@/components/knitbook/patterns/PatternPdfCanvas"),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex justify-center py-8">
-        <KnitSpinner className="size-8 text-primary" label="PDF를 불러오는 중" />
-      </div>
-    ),
+    // 뷰어 오버레이 스피너만 쓰므로 청크 로딩 UI는 비운다.
+    loading: () => null,
   }
 );
 
@@ -50,6 +48,7 @@ const PatternDetailScreen = ({ initialPattern }: PatternDetailScreenProps) => {
   const [totalPages, setTotalPages] = useState(0);
   const [zoomPercent, setZoomPercent] = useState(100);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -227,6 +226,7 @@ const PatternDetailScreen = ({ initialPattern }: PatternDetailScreenProps) => {
             onZoomChange={setZoomPercent}
             onToggleBookmark={() => void handleToggleBookmark()}
             onToggleFullscreen={() => void handleToggleFullscreen()}
+            onRename={() => setIsRenameDialogOpen(true)}
             isBookmarked={currentPageData.bookmark}
             isLoading={!totalPages && !loadError}
           >
@@ -253,6 +253,16 @@ const PatternDetailScreen = ({ initialPattern }: PatternDetailScreenProps) => {
           />
         </div>
       )}
+
+      <RenamePatternDialog
+        patternId={pattern.id}
+        currentTitle={pattern.title}
+        open={isRenameDialogOpen}
+        onOpenChange={setIsRenameDialogOpen}
+        onRenamed={(nextTitle) => {
+          setPattern((prev) => ({ ...prev, title: nextTitle }));
+        }}
+      />
 
       <StartProjectDialog
         patternId={pattern.id}

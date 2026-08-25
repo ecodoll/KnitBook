@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 import { cn } from "@/lib/utils";
-import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
@@ -59,9 +58,7 @@ const PatternPdfCanvas = ({
       <Document
         file={pdfUrl}
         options={documentOptions}
-        loading={
-          <KnitSpinner className="size-8 text-primary" label="PDF를 불러오는 중" />
-        }
+        loading={null}
         error={
           <p className="text-sm text-destructive">
             PDF를 표시하지 못했어요. 잠시 후 다시 시도해 주세요.
@@ -75,9 +72,7 @@ const PatternPdfCanvas = ({
           width={pageWidth}
           renderTextLayer={false}
           renderAnnotationLayer={false}
-          loading={
-            <KnitSpinner className="size-6 text-primary" label="페이지를 그리는 중" />
-          }
+          loading={null}
         />
       </Document>
     </div>
