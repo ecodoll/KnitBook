@@ -9,9 +9,9 @@ import {
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
 import {
-  PATTERN_PDF_BUCKET,
-  PATTERN_SIGNED_URL_TTL,
-} from "@/lib/knitbook/patterns/constants";
+  createSignedCoverUrls,
+  createSignedStorageUrl,
+} from "@/lib/knitbook/patterns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type PatternsPageData = {
@@ -28,23 +28,8 @@ export type PatternDetailPageData = {
  * Supabase Storage PDF 경로에 대한 서명 URL을 만든다.
  */
 const createSignedPdfUrl = async (storagePath: string | null) => {
-  if (!storagePath) {
-    return undefined;
-  }
-
   const supabase = await createClient();
-  const { data, error } = await supabase.storage
-    .from(PATTERN_PDF_BUCKET)
-    .createSignedUrl(storagePath, PATTERN_SIGNED_URL_TTL);
-
-  if (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[PDF 서명 URL 생성 실패]", error.message);
-    }
-    return undefined;
-  }
-
-  return data.signedUrl;
+  return createSignedStorageUrl(supabase, storagePath);
 };
 
 /**
@@ -78,9 +63,17 @@ const getPatternsPageData = cache(async (): Promise<PatternsPageData | null> => 
     throw new Error("도안 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
+  const rows = (data ?? []) as PatternRow[];
+  const signedCovers = await createSignedCoverUrls(
+    supabase,
+    rows.map((row) => row.cover_image_url)
+  );
+
   return {
     user,
-    patterns: ((data ?? []) as PatternRow[]).map(mapPattern),
+    patterns: rows.map((row, index) =>
+      mapPattern(row, { signedCoverUrl: signedCovers[index] })
+    ),
   };
 });
 
@@ -121,14 +114,16 @@ const getPatternDetailPageData = cache(async (
     return null;
   }
 
-  const [{ data: pageRows, error: pagesError }, signedPdfUrl] =
+  const row = patternRow as PatternRow;
+  const [{ data: pageRows, error: pagesError }, signedPdfUrl, signedCoverUrl] =
     await Promise.all([
       supabase
         .from("pattern_pages")
         .select("id, page_number, bookmark, memo")
         .eq("pattern_id", patternId)
         .order("page_number", { ascending: true }),
-      createSignedPdfUrl((patternRow as PatternRow).pdf_url),
+      createSignedStorageUrl(supabase, row.pdf_url),
+      createSignedStorageUrl(supabase, row.cover_image_url),
     ]);
 
   if (pagesError) {
@@ -141,9 +136,10 @@ const getPatternDetailPageData = cache(async (
   return {
     user,
     pattern: mapPatternDetail(
-      patternRow as PatternRow,
+      row,
       (pageRows ?? []) as PatternPageRow[],
-      signedPdfUrl
+      signedPdfUrl,
+      signedCoverUrl
     ),
   };
 });

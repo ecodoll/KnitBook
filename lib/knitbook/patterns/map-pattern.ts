@@ -28,10 +28,15 @@ type PatternPageRow = {
   memo: string | null;
 };
 
+type MapPatternOptions = {
+  /** 표시용으로 서명한 표지 URL */
+  signedCoverUrl?: string;
+};
+
 /**
  * DB 도안 행을 UI Pattern 타입으로 변환한다.
  */
-const mapPattern = (row: PatternRow): Pattern => {
+const mapPattern = (row: PatternRow, options?: MapPatternOptions): Pattern => {
   const difficulty =
     row.difficulty === 1 ||
     row.difficulty === 2 ||
@@ -45,7 +50,8 @@ const mapPattern = (row: PatternRow): Pattern => {
     id: row.id,
     title: row.title,
     designer: row.designer ?? undefined,
-    coverImageUrl: row.cover_image_url ?? undefined,
+    coverImageUrl: options?.signedCoverUrl,
+    pdfStoragePath: row.pdf_url ?? undefined,
     difficulty,
     category: row.category ?? undefined,
     tags: row.tags ?? undefined,
@@ -73,10 +79,11 @@ const mapPatternPage = (row: PatternPageRow): PatternPage => {
 const mapPatternDetail = (
   row: PatternRow,
   pages: PatternPageRow[],
-  signedPdfUrl?: string
+  signedPdfUrl?: string,
+  signedCoverUrl?: string
 ): PatternDetail => {
   return {
-    ...mapPattern(row),
+    ...mapPattern(row, { signedCoverUrl }),
     pdfStoragePath: row.pdf_url ?? undefined,
     pdfUrl: signedPdfUrl,
     notes: row.notes ?? undefined,

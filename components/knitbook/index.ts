@@ -21,6 +21,7 @@ export { default as RecentPatternsSection } from "@/components/knitbook/home/Rec
 export { default as YarnSummarySection } from "@/components/knitbook/home/YarnSummarySection";
 
 export { default as PatternCard } from "@/components/knitbook/patterns/PatternCard";
+export { default as PatternCover } from "@/components/knitbook/patterns/PatternCover";
 export { default as PatternList } from "@/components/knitbook/patterns/PatternList";
 export { default as PatternUploadForm } from "@/components/knitbook/patterns/PatternUploadForm";
 export { default as PatternViewer } from "@/components/knitbook/patterns/PatternViewer";
