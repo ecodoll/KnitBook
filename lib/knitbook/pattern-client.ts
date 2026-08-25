@@ -3,16 +3,22 @@
 import type { Pattern, PatternDetail, PatternPage } from "@/components/knitbook/types";
 import type { PatternUploadValues } from "@/components/knitbook/patterns/PatternUploadForm";
 import {
+  buildPatternCoverPath,
   buildPatternPdfPath,
+  PATTERN_COVER_CONTENT_TYPE,
   PATTERN_PDF_BUCKET,
-  PATTERN_SIGNED_URL_TTL,
 } from "@/lib/knitbook/patterns/constants";
+import { extractPatternCoverFromPdf } from "@/lib/knitbook/patterns/extract-cover";
 import {
   mapPattern,
   mapPatternDetail,
   type PatternPageRow,
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
+import {
+  createSignedCoverUrls,
+  createSignedStorageUrl,
+} from "@/lib/knitbook/patterns/signed-url";
 import { createClient } from "@/lib/supabase/client";
 
 const PATTERN_SELECT =
@@ -40,15 +46,11 @@ const requireUserId = async () => {
  */
 const getSignedPdfUrl = async (storagePath: string) => {
   const supabase = createClient();
-  const { data, error } = await supabase.storage
-    .from(PATTERN_PDF_BUCKET)
-    .createSignedUrl(storagePath, PATTERN_SIGNED_URL_TTL);
-
-  if (error) {
+  const signedUrl = await createSignedStorageUrl(supabase, storagePath);
+  if (!signedUrl) {
     throw new Error("PDF 파일 주소를 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
-
-  return data.signedUrl;
+  return signedUrl;
 };
 
 /**
@@ -68,7 +70,15 @@ const fetchPatterns = async (): Promise<Pattern[]> => {
     throw error;
   }
 
-  return ((data ?? []) as PatternRow[]).map(mapPattern);
+  const rows = (data ?? []) as PatternRow[];
+  const signedCovers = await createSignedCoverUrls(
+    supabase,
+    rows.map((row) => row.cover_image_url)
+  );
+
+  return rows.map((row, index) =>
+    mapPattern(row, { signedCoverUrl: signedCovers[index] })
+  );
 };
 
 /**
@@ -104,11 +114,16 @@ const fetchPatternDetail = async (patternId: string): Promise<PatternDetail> => 
 
   const storagePath = (patternRow as PatternRow).pdf_url;
   const signedPdfUrl = storagePath ? await getSignedPdfUrl(storagePath) : undefined;
+  const signedCoverUrl = await createSignedStorageUrl(
+    supabase,
+    (patternRow as PatternRow).cover_image_url
+  );
 
   return mapPatternDetail(
     patternRow as PatternRow,
     (pageRows ?? []) as PatternPageRow[],
-    signedPdfUrl
+    signedPdfUrl,
+    signedCoverUrl
   );
 };
 
@@ -139,6 +154,8 @@ const uploadPattern = async (values: PatternUploadValues): Promise<Pattern> => {
 
   const patternId = (inserted as PatternRow).id;
   const storagePath = buildPatternPdfPath(userId, patternId);
+  const coverPath = buildPatternCoverPath(userId, patternId);
+  const coverPromise = extractPatternCoverFromPdf(values.file);
 
   const { error: uploadError } = await supabase.storage
     .from(PATTERN_PDF_BUCKET)
@@ -152,9 +169,37 @@ const uploadPattern = async (values: PatternUploadValues): Promise<Pattern> => {
     throw uploadError;
   }
 
+  let coverStoragePath: string | null = null;
+  try {
+    const coverBlob = await coverPromise;
+    if (coverBlob) {
+      const { error: coverError } = await supabase.storage
+        .from(PATTERN_PDF_BUCKET)
+        .upload(coverPath, coverBlob, {
+          contentType: PATTERN_COVER_CONTENT_TYPE,
+          upsert: true,
+        });
+
+      if (coverError) {
+        if (process.env.NODE_ENV === "development") {
+          console.error("[도안 표지 업로드 실패]", coverError.message);
+        }
+      } else {
+        coverStoragePath = coverPath;
+      }
+    }
+  } catch (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[도안 표지 추출 실패]", error);
+    }
+  }
+
   const { data: updated, error: updateError } = await supabase
     .from("patterns")
-    .update({ pdf_url: storagePath })
+    .update({
+      pdf_url: storagePath,
+      cover_image_url: coverStoragePath,
+    })
     .eq("id", patternId)
     .select(PATTERN_SELECT)
     .single();
@@ -163,7 +208,12 @@ const uploadPattern = async (values: PatternUploadValues): Promise<Pattern> => {
     throw updateError ?? new Error("도안 PDF 경로를 저장하지 못했어요.");
   }
 
-  return mapPattern(updated as PatternRow);
+  const signedCoverUrl = await createSignedStorageUrl(
+    supabase,
+    (updated as PatternRow).cover_image_url
+  );
+
+  return mapPattern(updated as PatternRow, { signedCoverUrl });
 };
 
 /**
@@ -233,15 +283,19 @@ const upsertPatternPage = async (
 };
 
 /**
- * 도안을 삭제한다. (Storage PDF 포함)
+ * 도안을 삭제한다. (Storage PDF·표지 포함)
  */
 const deletePattern = async (patternId: string, storagePath?: string) => {
   const { supabase, userId } = await requireUserId();
+  const pathsToRemove = [
+    storagePath,
+    buildPatternCoverPath(userId, patternId),
+  ].filter((path): path is string => Boolean(path));
 
-  if (storagePath) {
+  if (pathsToRemove.length > 0) {
     const { error: storageError } = await supabase.storage
       .from(PATTERN_PDF_BUCKET)
-      .remove([storagePath]);
+      .remove(pathsToRemove);
 
     if (storageError && process.env.NODE_ENV === "development") {
       console.error("[PDF 삭제 실패]", storageError.message);
@@ -287,6 +341,98 @@ const createProjectFromPattern = async (
   return data;
 };
 
+const coverJobs = new Map<string, Promise<string | undefined>>();
+let activeCoverJobs = 0;
+const waitingCoverJobs: Array<() => void> = [];
+const MAX_COVER_JOBS = 2;
+
+/**
+ * 동시에 돌아가는 표지 추출 작업 수를 제한한다.
+ */
+const withCoverJobLimit = async <T>(task: () => Promise<T>) => {
+  if (activeCoverJobs >= MAX_COVER_JOBS) {
+    await new Promise<void>((resolve) => {
+      waitingCoverJobs.push(resolve);
+    });
+  }
+
+  activeCoverJobs += 1;
+  try {
+    return await task();
+  } finally {
+    activeCoverJobs -= 1;
+    waitingCoverJobs.shift()?.();
+  }
+};
+
+/**
+ * 표지가 없으면 PDF 첫 페이지에서 만들어 저장한다.
+ */
+const ensurePatternCover = async (
+  patternId: string,
+  pdfStoragePath: string
+): Promise<string | undefined> => {
+  const pending = coverJobs.get(patternId);
+  if (pending) {
+    return pending;
+  }
+
+  const job = withCoverJobLimit(async () => {
+    const { supabase, userId } = await requireUserId();
+    const { data: existing, error: existingError } = await supabase
+      .from("patterns")
+      .select("cover_image_url")
+      .eq("id", patternId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (existingError) {
+      throw existingError;
+    }
+
+    const existingCover = (existing as { cover_image_url: string | null } | null)
+      ?.cover_image_url;
+    if (existingCover) {
+      return createSignedStorageUrl(supabase, existingCover);
+    }
+
+    const signedPdfUrl = await getSignedPdfUrl(pdfStoragePath);
+    const coverBlob = await extractPatternCoverFromPdf(signedPdfUrl);
+    if (!coverBlob) {
+      return undefined;
+    }
+
+    const coverPath = buildPatternCoverPath(userId, patternId);
+    const { error: coverError } = await supabase.storage
+      .from(PATTERN_PDF_BUCKET)
+      .upload(coverPath, coverBlob, {
+        contentType: PATTERN_COVER_CONTENT_TYPE,
+        upsert: true,
+      });
+
+    if (coverError) {
+      throw coverError;
+    }
+
+    const { error: updateError } = await supabase
+      .from("patterns")
+      .update({ cover_image_url: coverPath })
+      .eq("id", patternId)
+      .eq("user_id", userId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return createSignedStorageUrl(supabase, coverPath);
+  }).finally(() => {
+    coverJobs.delete(patternId);
+  });
+
+  coverJobs.set(patternId, job);
+  return job;
+};
+
 export {
   fetchPatterns,
   fetchPatternDetail,
@@ -296,4 +442,5 @@ export {
   deletePattern,
   createProjectFromPattern,
   getSignedPdfUrl,
+  ensurePatternCover,
 };

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Pattern } from "@/components/knitbook/types";
+import PatternCover from "@/components/knitbook/patterns/PatternCover";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { Heart, BookOpen } from "lucide-react";
+import { Heart } from "lucide-react";
 
 type PatternCardProps = {
   pattern: Pattern;
@@ -29,16 +30,12 @@ const PatternCard = ({ pattern, compact = false, className }: PatternCardProps) 
           compact ? "aspect-[3/4]" : "aspect-[4/3]"
         )}
       >
-        {pattern.coverImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- 외부 스토리지 URL 대응
-          <img
-            src={pattern.coverImageUrl}
-            alt=""
-            className="size-full object-cover"
-          />
-        ) : (
-          <BookOpen className="size-8 text-muted-foreground" aria-hidden />
-        )}
+        <PatternCover
+          patternId={pattern.id}
+          title={pattern.title}
+          coverImageUrl={pattern.coverImageUrl}
+          pdfStoragePath={pattern.pdfStoragePath}
+        />
         {pattern.isFavorite ? (
           <span className="absolute top-2 right-2 rounded-full bg-card/90 p-1 text-brand-berry">
             <Heart className="size-3.5 fill-current" aria-label="즐겨찾기" />

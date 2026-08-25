@@ -9,6 +9,7 @@ import type {
 } from "@/components/knitbook/types";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
 import { getAppHeaderUser, getAuthUser } from "@/lib/knitbook/app-user";
+import { createSignedCoverUrls } from "@/lib/knitbook/patterns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -29,6 +30,7 @@ type PatternRow = {
   title: string;
   designer: string | null;
   cover_image_url: string | null;
+  pdf_url: string | null;
   difficulty: number | null;
   category: string | null;
   tags: string[] | null;
@@ -134,7 +136,7 @@ const mapProject = (
 /**
  * DB 도안 행을 UI Pattern 타입으로 변환한다.
  */
-const mapPattern = (row: PatternRow): Pattern => {
+const mapPattern = (row: PatternRow, signedCoverUrl?: string): Pattern => {
   const difficulty =
     row.difficulty === 1 ||
     row.difficulty === 2 ||
@@ -148,7 +150,8 @@ const mapPattern = (row: PatternRow): Pattern => {
     id: row.id,
     title: row.title,
     designer: row.designer ?? undefined,
-    coverImageUrl: row.cover_image_url ?? undefined,
+    coverImageUrl: signedCoverUrl,
+    pdfStoragePath: row.pdf_url ?? undefined,
     difficulty,
     category: row.category ?? undefined,
     tags: row.tags ?? undefined,
@@ -211,7 +214,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     supabase
       .from("patterns")
       .select(
-        "id, title, designer, cover_image_url, difficulty, category, tags, favorite, last_opened_at, created_at"
+        "id, title, designer, cover_image_url, pdf_url, difficulty, category, tags, favorite, last_opened_at, created_at"
       )
       .eq("user_id", user.id)
       .order("last_opened_at", { ascending: false, nullsFirst: false })
@@ -263,7 +266,14 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     mapProject(row, latestLogsByProject.get(row.id) ?? null)
   );
 
-  const patterns = ((patternRows ?? []) as PatternRow[]).map(mapPattern);
+  const typedPatternRows = (patternRows ?? []) as PatternRow[];
+  const signedCovers = await createSignedCoverUrls(
+    supabase,
+    typedPatternRows.map((row) => row.cover_image_url)
+  );
+  const patterns = typedPatternRows.map((row, index) =>
+    mapPattern(row, signedCovers[index])
+  );
   const yarns = ((yarnRows ?? []) as YarnRow[]).map(mapYarn);
 
   const totalRemainingGrams = yarns.reduce((sum, yarn) => {
