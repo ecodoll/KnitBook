@@ -9,12 +9,7 @@ import SearchBar from "@/components/knitbook/shared/SearchBar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type YarnFilterKey =
-  | "all"
-  | "in_use"
-  | "low_stock"
-  | "brand"
-  | "weight";
+export type YarnFilterKey = "all" | "in_use" | "low_stock";
 
 type YarnFilterBarProps = {
   activeFilter: YarnFilterKey;
@@ -25,8 +20,6 @@ const FILTERS: { key: YarnFilterKey; label: string }[] = [
   { key: "all", label: "전체" },
   { key: "in_use", label: "사용 중" },
   { key: "low_stock", label: "부족" },
-  { key: "brand", label: "브랜드" },
-  { key: "weight", label: "굵기" },
 ];
 
 /**
@@ -81,7 +74,7 @@ const YarnList = ({
       <SearchBar
         value={searchQuery}
         onChange={onSearchChange}
-        placeholder="브랜드, 색상, LOT 검색"
+        placeholder="이름, 브랜드, 색깔, 제품번호 검색"
         label="실 검색"
       />
       <YarnFilterBar activeFilter={activeFilter} onFilterChange={onFilterChange} />

@@ -57,6 +57,24 @@ export type Project = {
   lastNote?: string;
   patternId?: string;
   patternTitle?: string;
+  size?: string;
+  startedAt?: string;
+  targetDate?: string;
+  completedAt?: string;
+  notes?: string;
+  yarns?: ProjectYarnLink[];
+};
+
+/** 작품에 연결한 실 */
+export type ProjectYarnLink = {
+  id: string;
+  yarnId: string;
+  brand: string;
+  productName: string;
+  colorName?: string;
+  plannedQuantity?: number;
+  usedQuantity?: number;
+  remainingGrams?: number;
 };
 
 /** 작품 작업 기록(Quick Log) */
@@ -71,22 +89,23 @@ export type WorkLog = {
   photoUrl?: string;
 };
 
-/** 실 재고 요약 정보 */
+/** 실 재고 정보 */
 export type Yarn = {
   id: string;
   brand: string;
   productName: string;
+  productCode?: string;
   colorName?: string;
-  colorCode?: string;
-  lotNumber?: string;
-  fiber?: string;
   weightGrams?: number;
   remainingGrams?: number;
-  quantity?: number;
-  yarnWeight?: string;
-  needleSizeMm?: string;
+  notes?: string;
+  /** 표시용 사진 URL (공개 URL 또는 서명 URL) */
   imageUrl?: string;
+  /** Storage에 저장된 사진 경로. 클라이언트에서 서명해 표시한다. */
+  imageStoragePath?: string;
   isInUse?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /** 실 재고 요약(홈 대시보드용) */
