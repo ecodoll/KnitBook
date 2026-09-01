@@ -39,6 +39,7 @@ export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLog
 export { default as YarnCard } from "@/components/knitbook/yarns/YarnCard";
 export { default as YarnList, YarnFilterBar } from "@/components/knitbook/yarns/YarnList";
 export { default as YarnForm } from "@/components/knitbook/yarns/YarnForm";
+export { default as YarnStockAdjustForm } from "@/components/knitbook/yarns/YarnStockAdjustForm";
 
 export { default as LoginForm } from "@/components/knitbook/auth/LoginForm";
 export { default as SignupForm } from "@/components/knitbook/auth/SignupForm";

@@ -3,7 +3,6 @@ import type {
   Pattern,
   Project,
   ProjectStatus,
-  Yarn,
   YarnInventorySummary,
 } from "@/components/knitbook/types";
 import type { AppHeaderUser } from "@/components/knitbook/layout/AppHeader";
@@ -12,6 +11,8 @@ import {
   mapPattern,
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
+import { LOW_STOCK_GRAMS } from "@/lib/knitbook/yarns/constants";
+import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -25,18 +26,6 @@ type ProjectRow = {
   pattern_id: string | null;
   notes: string | null;
   updated_at: string;
-};
-
-type YarnRow = {
-  id: string;
-  brand: string;
-  product_name: string;
-  color_name: string | null;
-  color_code: string | null;
-  remaining_weight: number | string | null;
-  quantity: number | string | null;
-  yarn_image_url: string | null;
-  is_in_use: boolean | null;
 };
 
 type ProjectLogRow = {
@@ -53,7 +42,6 @@ export type HomeDashboardData = {
   yarnSummary: YarnInventorySummary;
 };
 
-const LOW_STOCK_GRAMS = 100;
 const RECENT_YARN_LIMIT = 3;
 
 type SupabaseLikeError = {
@@ -114,23 +102,6 @@ const mapProject = (
     lastWorkedAt: latestLog?.created_at ?? row.updated_at,
     lastNote: latestLog?.memo ?? row.notes ?? undefined,
     patternId: row.pattern_id ?? undefined,
-  };
-};
-
-/**
- * DB 실 행을 UI Yarn 타입으로 변환한다.
- */
-const mapYarn = (row: YarnRow): Yarn => {
-  return {
-    id: row.id,
-    brand: row.brand,
-    productName: row.product_name,
-    colorName: row.color_name ?? undefined,
-    colorCode: row.color_code ?? undefined,
-    remainingGrams: toNumber(row.remaining_weight),
-    quantity: toNumber(row.quantity),
-    imageUrl: row.yarn_image_url ?? undefined,
-    isInUse: row.is_in_use ?? false,
   };
 };
 

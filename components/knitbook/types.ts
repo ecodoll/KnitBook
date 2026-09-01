@@ -71,22 +71,30 @@ export type WorkLog = {
   photoUrl?: string;
 };
 
-/** 실 재고 요약 정보 */
+/** 실 재고 정보 */
 export type Yarn = {
   id: string;
   brand: string;
   productName: string;
+  productCode?: string;
   colorName?: string;
   colorCode?: string;
   lotNumber?: string;
   fiber?: string;
   weightGrams?: number;
+  lengthMeters?: number;
   remainingGrams?: number;
   quantity?: number;
   yarnWeight?: string;
   needleSizeMm?: string;
+  purchaseDate?: string;
+  purchasePrice?: number;
+  purchaseStore?: string;
+  notes?: string;
   imageUrl?: string;
   isInUse?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 /** 실 재고 요약(홈 대시보드용) */

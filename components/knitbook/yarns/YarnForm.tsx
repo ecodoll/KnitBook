@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import type { Yarn } from "@/components/knitbook/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,14 +12,20 @@ import ErrorState from "@/components/knitbook/shared/ErrorState";
 export type YarnFormValues = {
   brand: string;
   productName: string;
+  productCode: string;
   colorName: string;
   colorCode: string;
   lotNumber: string;
   fiber: string;
+  weightGrams: string;
+  lengthMeters: string;
   remainingGrams: string;
   quantity: string;
   yarnWeight: string;
   needleSizeMm: string;
+  purchaseDate: string;
+  purchasePrice: string;
+  purchaseStore: string;
   memo: string;
 };
 
@@ -32,15 +39,46 @@ type YarnFormProps = {
 const EMPTY_VALUES: YarnFormValues = {
   brand: "",
   productName: "",
+  productCode: "",
   colorName: "",
   colorCode: "",
   lotNumber: "",
   fiber: "",
+  weightGrams: "",
+  lengthMeters: "",
   remainingGrams: "",
   quantity: "",
   yarnWeight: "",
   needleSizeMm: "",
+  purchaseDate: "",
+  purchasePrice: "",
+  purchaseStore: "",
   memo: "",
+};
+
+/**
+ * Yarn 도메인 값을 폼 입력 문자열로 변환한다.
+ */
+const yarnToFormValues = (yarn: Yarn): YarnFormValues => {
+  return {
+    brand: yarn.brand,
+    productName: yarn.productName,
+    productCode: yarn.productCode ?? "",
+    colorName: yarn.colorName ?? "",
+    colorCode: yarn.colorCode ?? "",
+    lotNumber: yarn.lotNumber ?? "",
+    fiber: yarn.fiber ?? "",
+    weightGrams: yarn.weightGrams?.toString() ?? "",
+    lengthMeters: yarn.lengthMeters?.toString() ?? "",
+    remainingGrams: yarn.remainingGrams?.toString() ?? "",
+    quantity: yarn.quantity?.toString() ?? "",
+    yarnWeight: yarn.yarnWeight ?? "",
+    needleSizeMm: yarn.needleSizeMm ?? "",
+    purchaseDate: yarn.purchaseDate ?? "",
+    purchasePrice: yarn.purchasePrice?.toString() ?? "",
+    purchaseStore: yarn.purchaseStore ?? "",
+    memo: yarn.notes ?? "",
+  };
 };
 
 /**
@@ -118,6 +156,17 @@ const YarnForm = ({
         </div>
       </div>
 
+      <div className="space-y-2">
+        <Label htmlFor="yarn-code">품번</Label>
+        <Input
+          id="yarn-code"
+          value={values.productCode}
+          onChange={(event) => updateField("productCode", event.target.value)}
+          placeholder="예: 1001"
+          disabled={isSubmitting}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="yarn-color-name">색상명</Label>
@@ -163,33 +212,6 @@ const YarnForm = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="yarn-remaining">남은 중량 (g)</Label>
-          <Input
-            id="yarn-remaining"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={values.remainingGrams}
-            onChange={(event) => updateField("remainingGrams", event.target.value)}
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="yarn-quantity">수량 (볼)</Label>
-          <Input
-            id="yarn-quantity"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={values.quantity}
-            onChange={(event) => updateField("quantity", event.target.value)}
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
           <Label htmlFor="yarn-weight">굵기</Label>
           <Input
             id="yarn-weight"
@@ -209,6 +231,95 @@ const YarnForm = ({
             disabled={isSubmitting}
           />
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="yarn-original-weight">원래 중량 (g)</Label>
+          <Input
+            id="yarn-original-weight"
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={values.weightGrams}
+            onChange={(event) => updateField("weightGrams", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="yarn-length">길이 (m)</Label>
+          <Input
+            id="yarn-length"
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={values.lengthMeters}
+            onChange={(event) => updateField("lengthMeters", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="yarn-remaining">남은 중량 (g)</Label>
+          <Input
+            id="yarn-remaining"
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={values.remainingGrams}
+            onChange={(event) => updateField("remainingGrams", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="yarn-quantity">수량 (볼)</Label>
+          <Input
+            id="yarn-quantity"
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={values.quantity}
+            onChange={(event) => updateField("quantity", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="yarn-purchase-date">구매일</Label>
+          <Input
+            id="yarn-purchase-date"
+            type="date"
+            value={values.purchaseDate}
+            onChange={(event) => updateField("purchaseDate", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="yarn-store">구매처</Label>
+          <Input
+            id="yarn-store"
+            value={values.purchaseStore}
+            onChange={(event) => updateField("purchaseStore", event.target.value)}
+            disabled={isSubmitting}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="yarn-price">가격</Label>
+        <Input
+          id="yarn-price"
+          type="number"
+          min={0}
+          inputMode="decimal"
+          value={values.purchasePrice}
+          onChange={(event) => updateField("purchasePrice", event.target.value)}
+          disabled={isSubmitting}
+        />
       </div>
 
       <div className="space-y-2">
@@ -235,4 +346,5 @@ const YarnForm = ({
   );
 };
 
+export { yarnToFormValues };
 export default YarnForm;
