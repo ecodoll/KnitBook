@@ -74,7 +74,7 @@ const YarnList = ({
       <SearchBar
         value={searchQuery}
         onChange={onSearchChange}
-        placeholder="브랜드, 색상, LOT 검색"
+        placeholder="이름, 브랜드, 색깔, 제품번호 검색"
         label="실 검색"
       />
       <YarnFilterBar activeFilter={activeFilter} onFilterChange={onFilterChange} />

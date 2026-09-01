@@ -11,7 +11,7 @@ import {
   mapPattern,
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
-import { LOW_STOCK_GRAMS } from "@/lib/knitbook/yarns/constants";
+import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
 import { createClient } from "@/lib/supabase/server";
 
@@ -143,9 +143,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       .limit(6),
     supabase
       .from("yarns")
-      .select(
-        "id, brand, product_name, color_name, color_code, remaining_weight, quantity, yarn_image_url, is_in_use"
-      )
+      .select(YARN_SELECT)
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false }),
   ]);
@@ -195,17 +193,17 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
   const patterns = ((patternRows ?? []) as PatternRow[]).map((row) =>
     mapPattern(row)
   );
-  const yarns = ((yarnRows ?? []) as YarnRow[]).map(mapYarn);
+  const yarns = ((yarnRows ?? []) as YarnRow[]).map((row) => mapYarn(row));
 
   const totalRemainingGrams = yarns.reduce((sum, yarn) => {
     return sum + (yarn.remainingGrams ?? 0);
   }, 0);
 
   const lowStockCount = yarns.filter((yarn) => {
-    if (typeof yarn.remainingGrams === "number") {
-      return yarn.remainingGrams < LOW_STOCK_GRAMS;
-    }
-    return (yarn.quantity ?? 0) <= 0;
+    return (
+      typeof yarn.remainingGrams === "number" &&
+      yarn.remainingGrams < LOW_STOCK_GRAMS
+    );
   }).length;
 
   const yarnSummary: YarnInventorySummary = {

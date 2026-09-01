@@ -37,7 +37,6 @@ export type ProjectYarnJoinRow = {
     product_name?: string;
     color_name?: string | null;
     remaining_weight?: number | string | null;
-    recommended_needle?: string | null;
   } | null;
 };
 
@@ -67,7 +66,6 @@ const mapProjectYarn = (row: ProjectYarnJoinRow): ProjectYarnLink => {
     plannedQuantity: toNumber(row.planned_quantity),
     usedQuantity: toNumber(row.used_quantity),
     remainingGrams: toNumber(yarn?.remaining_weight),
-    needleSizeMm: yarn?.recommended_needle ?? undefined,
   };
 };
 

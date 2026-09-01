@@ -3,6 +3,7 @@ import type { Yarn } from "@/components/knitbook/types";
 import { getAuthUser } from "@/lib/knitbook/app-user";
 import { YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
+import { createSignedYarnImageUrls } from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type YarnsPageData = {
@@ -11,6 +12,25 @@ export type YarnsPageData = {
 
 export type YarnDetailPageData = {
   yarn: Yarn;
+};
+
+/**
+ * DB 실 행들에 사진 서명 URL을 붙여 UI 타입으로 변환한다.
+ */
+const mapYarnsWithImages = async (
+  rows: YarnRow[]
+): Promise<Yarn[]> => {
+  const supabase = await createClient();
+  const mapped = rows.map((row) => mapYarn(row));
+  const signedUrls = await createSignedYarnImageUrls(
+    supabase,
+    mapped.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
+  );
+
+  return mapped.map((yarn, index) => ({
+    ...yarn,
+    imageUrl: signedUrls[index] ?? yarn.imageUrl,
+  }));
 };
 
 /**
@@ -37,7 +57,7 @@ const getYarnsPageData = cache(async (): Promise<YarnsPageData | null> => {
   }
 
   return {
-    yarns: ((data ?? []) as YarnRow[]).map(mapYarn),
+    yarns: await mapYarnsWithImages((data ?? []) as YarnRow[]),
   };
 });
 
@@ -71,8 +91,10 @@ const getYarnDetailPageData = cache(async (
     return null;
   }
 
+  const [yarn] = await mapYarnsWithImages([data as YarnRow]);
+
   return {
-    yarn: mapYarn(data as YarnRow),
+    yarn,
   };
 });
 

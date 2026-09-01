@@ -29,11 +29,7 @@ const matchesYarnFilter = (
   }
 
   if (activeFilter === "low_stock") {
-    const isLow =
-      typeof yarn.remainingGrams === "number"
-        ? yarn.remainingGrams < LOW_STOCK_GRAMS
-        : (yarn.quantity ?? 0) <= 0;
-    if (!isLow) {
+    if (typeof yarn.remainingGrams !== "number" || yarn.remainingGrams >= LOW_STOCK_GRAMS) {
       return false;
     }
   }
@@ -43,15 +39,10 @@ const matchesYarnFilter = (
   }
 
   const haystack = [
-    yarn.brand,
     yarn.productName,
-    yarn.productCode,
+    yarn.brand,
     yarn.colorName,
-    yarn.colorCode,
-    yarn.lotNumber,
-    yarn.fiber,
-    yarn.yarnWeight,
-    yarn.needleSizeMm,
+    yarn.productCode,
   ]
     .filter(Boolean)
     .join(" ")

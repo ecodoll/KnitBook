@@ -331,9 +331,6 @@ const ProjectDetailScreen = ({
                       {typeof yarn.remainingGrams === "number" ? (
                         <Badge variant="outline">남은 {yarn.remainingGrams}g</Badge>
                       ) : null}
-                      {yarn.needleSizeMm ? (
-                        <Badge variant="outline">{yarn.needleSizeMm}</Badge>
-                      ) : null}
                     </div>
                   </Link>
                 </li>

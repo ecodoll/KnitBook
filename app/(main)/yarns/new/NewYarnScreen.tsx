@@ -43,7 +43,7 @@ const NewYarnScreen = () => {
         <CardHeader>
           <CardTitle>실 등록</CardTitle>
           <CardDescription>
-            브랜드와 제품명, 남은 양을 입력하면 재고에 저장돼요.
+            실 이름과 브랜드, 사진을 입력하면 재고에 저장돼요.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -613,3 +613,51 @@ create policy "pattern_pdfs_delete_own"
     bucket_id = 'pattern-pdfs'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------------
+-- Storage: 실 사진 (사용자별 private bucket, 서명 URL로 조회)
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('yarn-images', 'yarn-images', false)
+on conflict (id) do nothing;
+
+drop policy if exists "yarn_images_insert_own" on storage.objects;
+drop policy if exists "yarn_images_select_own" on storage.objects;
+drop policy if exists "yarn_images_update_own" on storage.objects;
+drop policy if exists "yarn_images_delete_own" on storage.objects;
+
+create policy "yarn_images_insert_own"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "yarn_images_select_own"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "yarn_images_update_own"
+  on storage.objects for update
+  to authenticated
+  using (
+    bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "yarn_images_delete_own"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

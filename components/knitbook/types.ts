@@ -75,7 +75,6 @@ export type ProjectYarnLink = {
   plannedQuantity?: number;
   usedQuantity?: number;
   remainingGrams?: number;
-  needleSizeMm?: string;
 };
 
 /** 작품 작업 기록(Quick Log) */
@@ -97,20 +96,13 @@ export type Yarn = {
   productName: string;
   productCode?: string;
   colorName?: string;
-  colorCode?: string;
-  lotNumber?: string;
-  fiber?: string;
   weightGrams?: number;
-  lengthMeters?: number;
   remainingGrams?: number;
-  quantity?: number;
-  yarnWeight?: string;
-  needleSizeMm?: string;
-  purchaseDate?: string;
-  purchasePrice?: number;
-  purchaseStore?: string;
   notes?: string;
+  /** 표시용 사진 URL (공개 URL 또는 서명 URL) */
   imageUrl?: string;
+  /** Storage에 저장된 사진 경로. 클라이언트에서 서명해 표시한다. */
+  imageStoragePath?: string;
   isInUse?: boolean;
   createdAt?: string;
   updatedAt?: string;

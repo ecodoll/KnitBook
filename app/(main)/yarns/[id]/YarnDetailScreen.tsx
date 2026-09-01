@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Yarn } from "@/components/knitbook/types";
 import type { YarnLinkedProject } from "@/lib/knitbook/project-data";
 import YarnForm, { yarnToFormValues } from "@/components/knitbook/yarns/YarnForm";
+import YarnPhoto from "@/components/knitbook/yarns/YarnPhoto";
 import YarnStockAdjustForm from "@/components/knitbook/yarns/YarnStockAdjustForm";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import {
@@ -114,12 +115,13 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
           <CardHeader>
             <CardTitle>실 정보 수정</CardTitle>
             <CardDescription>
-              브랜드, 재고량, LOT 등 정보를 업데이트해요.
+              이름, 색깔, 무게, 사진을 업데이트해요.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <YarnForm
               initialValues={yarnToFormValues(yarn)}
+              currentImageUrl={yarn.imageUrl}
               isSubmitting={isSaving}
               submitLabel="변경 저장"
               onSubmit={async (values) => {
@@ -187,22 +189,16 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
       ) : null}
 
       <Card size="sm">
-        <CardHeader className="flex-row items-start gap-3">
-          <div className="min-w-0 flex-1 space-y-1">
-            <CardTitle className="text-lg">
-              {yarn.brand} · {yarn.productName}
-            </CardTitle>
+        <CardHeader className="space-y-3">
+          <YarnPhoto yarn={yarn} large />
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="text-lg">{yarn.productName}</CardTitle>
             <CardDescription>
-              {[yarn.colorName, yarn.colorCode ? `#${yarn.colorCode}` : null]
-                .filter(Boolean)
-                .join(" · ") || "색상 미입력"}
+              {[yarn.brand, yarn.colorName].filter(Boolean).join(" · ") || "정보 미입력"}
             </CardDescription>
             <div className="flex flex-wrap gap-1.5 pt-1">
               {remainingLabel ? (
-                <Badge variant="secondary">남은 양 {remainingLabel}</Badge>
-              ) : null}
-              {yarn.lotNumber ? (
-                <Badge variant="outline">LOT {yarn.lotNumber}</Badge>
+                <Badge variant="secondary">남은 무게 {remainingLabel}</Badge>
               ) : null}
               {yarn.isInUse ? (
                 <Badge className="bg-brand-berry text-brand-berry-foreground">
@@ -214,29 +210,15 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
         </CardHeader>
         <CardContent>
           <dl>
-            <YarnInfoRow label="품번" value={yarn.productCode} />
+            <YarnInfoRow label="브랜드" value={yarn.brand} />
+            <YarnInfoRow label="색깔" value={yarn.colorName} />
+            <YarnInfoRow label="제품번호" value={yarn.productCode} />
+            <YarnInfoRow label="무게" value={yarn.weightGrams} suffix="g" />
             <YarnInfoRow
-              label="현재 잔량"
+              label="남은 무게"
               value={yarn.remainingGrams}
               suffix="g"
             />
-            <YarnInfoRow
-              label="사용 전 중량"
-              value={yarn.weightGrams}
-              suffix="g"
-            />
-            <YarnInfoRow label="수량" value={yarn.quantity} suffix="볼" />
-            <YarnInfoRow
-              label="길이"
-              value={yarn.lengthMeters}
-              suffix="m"
-            />
-            <YarnInfoRow label="소재" value={yarn.fiber} />
-            <YarnInfoRow label="굵기" value={yarn.yarnWeight} />
-            <YarnInfoRow label="권장 바늘" value={yarn.needleSizeMm} />
-            <YarnInfoRow label="구매일" value={yarn.purchaseDate} />
-            <YarnInfoRow label="구매처" value={yarn.purchaseStore} />
-            <YarnInfoRow label="가격" value={yarn.purchasePrice} />
             <YarnInfoRow label="메모" value={yarn.notes} />
           </dl>
         </CardContent>
@@ -272,7 +254,7 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
       <Card size="sm">
         <CardHeader>
           <CardTitle>재고 차감</CardTitle>
-          <CardDescription>사용한 만큼 남은 중량에서 빼요.</CardDescription>
+          <CardDescription>사용한 만큼 남은 무게에서 빼요.</CardDescription>
         </CardHeader>
         <CardContent>
           <YarnStockAdjustForm

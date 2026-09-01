@@ -14,7 +14,7 @@ type YarnStockAdjustFormProps = {
 };
 
 /**
- * 사용한 실 중량을 남은 재고에서 차감한다.
+ * 사용한 실 무게를 남은 재고에서 차감한다.
  */
 const YarnStockAdjustForm = ({
   remainingGrams,
@@ -30,7 +30,7 @@ const YarnStockAdjustForm = ({
 
     const parsed = Number(grams);
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      setErrorMessage("차감할 중량을 0보다 크게 입력해 주세요.");
+      setErrorMessage("차감할 무게를 0보다 크게 입력해 주세요.");
       return;
     }
 
@@ -55,13 +55,13 @@ const YarnStockAdjustForm = ({
 
       <p className="text-sm text-muted-foreground">
         {typeof remainingGrams === "number"
-          ? `현재 남은 양 ${remainingGrams}g`
-          : "남은 중량이 아직 없어요. 수정에서 먼저 입력해 주세요."}
+          ? `현재 남은 무게 ${remainingGrams}g`
+          : "남은 무게가 아직 없어요. 수정에서 먼저 입력해 주세요."}
       </p>
 
       <div className="flex items-end gap-2">
         <div className="min-w-0 flex-1 space-y-2">
-          <Label htmlFor="yarn-deduct">차감할 중량 (g)</Label>
+          <Label htmlFor="yarn-deduct">차감할 무게 (g)</Label>
           <Input
             id="yarn-deduct"
             type="number"

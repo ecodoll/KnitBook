@@ -2,8 +2,18 @@
 
 import type { Yarn } from "@/components/knitbook/types";
 import type { YarnFormValues } from "@/components/knitbook/yarns/YarnForm";
-import { YARN_SELECT } from "@/lib/knitbook/yarns/constants";
+import {
+  buildYarnImagePath,
+  getYarnImageExtension,
+  YARN_IMAGE_BUCKET,
+  YARN_IMAGE_MAX_BYTES,
+  YARN_SELECT,
+} from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
+import {
+  createSignedYarnImageUrl,
+  createSignedYarnImageUrls,
+} from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/client";
 
 type YarnWritePayload = {
@@ -11,18 +21,8 @@ type YarnWritePayload = {
   product_name: string;
   product_code: string | null;
   color_name: string | null;
-  color_code: string | null;
-  lot_number: string | null;
-  material: string | null;
   weight_gram: number | null;
-  length_meter: number | null;
-  thickness: string | null;
-  recommended_needle: string | null;
-  quantity: number;
   remaining_weight: number | null;
-  purchase_date: string | null;
-  purchase_price: number | null;
-  purchase_store: string | null;
   notes: string | null;
 };
 
@@ -71,28 +71,122 @@ const parseOptionalNumber = (value: string, label: string) => {
 };
 
 /**
+ * 실 사진 파일이 허용된 이미지인지 검사한다.
+ */
+const assertYarnImageFile = (file: File) => {
+  const isImage =
+    file.type.startsWith("image/") ||
+    /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
+
+  if (!isImage) {
+    throw new Error("사진 파일만 올릴 수 있어요.");
+  }
+
+  if (file.size > YARN_IMAGE_MAX_BYTES) {
+    throw new Error("사진 용량은 8MB 이하로 올려 주세요.");
+  }
+};
+
+/**
  * 실 등록/수정 폼 값을 DB payload로 변환한다.
  */
 const toYarnWritePayload = (values: YarnFormValues): YarnWritePayload => {
+  const weightGram = parseOptionalNumber(values.weightGrams, "무게");
+  const remainingWeight =
+    parseOptionalNumber(values.remainingGrams, "남은 무게") ?? weightGram;
+
+  if (
+    weightGram !== null &&
+    remainingWeight !== null &&
+    remainingWeight > weightGram
+  ) {
+    throw new Error("남은 무게는 전체 무게보다 클 수 없어요.");
+  }
+
   return {
     brand: values.brand.trim(),
     product_name: values.productName.trim(),
     product_code: emptyToNull(values.productCode),
     color_name: emptyToNull(values.colorName),
-    color_code: emptyToNull(values.colorCode),
-    lot_number: emptyToNull(values.lotNumber),
-    material: emptyToNull(values.fiber),
-    weight_gram: parseOptionalNumber(values.weightGrams, "중량"),
-    length_meter: parseOptionalNumber(values.lengthMeters, "길이"),
-    thickness: emptyToNull(values.yarnWeight),
-    recommended_needle: emptyToNull(values.needleSizeMm),
-    quantity: parseOptionalNumber(values.quantity, "수량") ?? 0,
-    remaining_weight: parseOptionalNumber(values.remainingGrams, "남은 중량"),
-    purchase_date: emptyToNull(values.purchaseDate),
-    purchase_price: parseOptionalNumber(values.purchasePrice, "가격"),
-    purchase_store: emptyToNull(values.purchaseStore),
+    weight_gram: weightGram,
+    remaining_weight: remainingWeight,
     notes: emptyToNull(values.memo),
   };
+};
+
+/**
+ * DB 실 행에 사진 서명 URL을 붙여 반환한다.
+ */
+const mapYarnWithImage = async (
+  supabase: ReturnType<typeof createClient>,
+  row: YarnRow
+): Promise<Yarn> => {
+  const yarn = mapYarn(row);
+  const imageUrl = await createSignedYarnImageUrl(
+    supabase,
+    yarn.imageStoragePath ?? yarn.imageUrl
+  );
+  return { ...yarn, imageUrl: imageUrl ?? yarn.imageUrl };
+};
+
+/**
+ * 실 사진을 Storage에 올리고 DB 경로를 갱신한다.
+ */
+const uploadYarnImage = async (
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  yarnId: string,
+  file: File,
+  previousPath?: string
+) => {
+  assertYarnImageFile(file);
+
+  const extension = getYarnImageExtension(file);
+  const storagePath = buildYarnImagePath(userId, yarnId, extension);
+  const contentType = file.type.startsWith("image/")
+    ? file.type
+    : "image/jpeg";
+
+  const { error: uploadError } = await supabase.storage
+    .from(YARN_IMAGE_BUCKET)
+    .upload(storagePath, file, {
+      contentType,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[실 사진 업로드 실패]", uploadError);
+    }
+    throw new Error("실 사진을 올리지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  if (previousPath && previousPath !== storagePath) {
+    const { error: removeError } = await supabase.storage
+      .from(YARN_IMAGE_BUCKET)
+      .remove([previousPath]);
+
+    if (removeError && process.env.NODE_ENV === "development") {
+      console.error("[이전 실 사진 삭제 실패]", removeError);
+    }
+  }
+
+  const { data, error } = await supabase
+    .from("yarns")
+    .update({ yarn_image_url: storagePath })
+    .eq("id", yarnId)
+    .eq("user_id", userId)
+    .select(YARN_SELECT)
+    .single();
+
+  if (error || !data) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[실 사진 경로 저장 실패]", error);
+    }
+    throw new Error("실 사진을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  return mapYarnWithImage(supabase, data as YarnRow);
 };
 
 /**
@@ -114,7 +208,17 @@ const fetchYarns = async (): Promise<Yarn[]> => {
     throw new Error("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return ((data ?? []) as YarnRow[]).map(mapYarn);
+  const rows = (data ?? []) as YarnRow[];
+  const mapped = rows.map((row) => mapYarn(row));
+  const signedUrls = await createSignedYarnImageUrls(
+    supabase,
+    mapped.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
+  );
+
+  return mapped.map((yarn, index) => ({
+    ...yarn,
+    imageUrl: signedUrls[index] ?? yarn.imageUrl,
+  }));
 };
 
 /**
@@ -141,7 +245,7 @@ const fetchYarnDetail = async (yarnId: string): Promise<Yarn> => {
     throw new Error("실 정보를 찾을 수 없어요.");
   }
 
-  return mapYarn(data as YarnRow);
+  return mapYarnWithImage(supabase, data as YarnRow);
 };
 
 /**
@@ -166,7 +270,18 @@ const createYarn = async (values: YarnFormValues): Promise<Yarn> => {
     throw new Error("실 정보를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return mapYarn(data as YarnRow);
+  const row = data as YarnRow;
+
+  if (values.photo) {
+    try {
+      return await uploadYarnImage(supabase, userId, row.id, values.photo);
+    } catch (photoError) {
+      await supabase.from("yarns").delete().eq("id", row.id).eq("user_id", userId);
+      throw photoError;
+    }
+  }
+
+  return mapYarnWithImage(supabase, row);
 };
 
 /**
@@ -190,26 +305,39 @@ const updateYarn = async (yarnId: string, values: YarnFormValues): Promise<Yarn>
     throw new Error("실 정보를 수정하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return mapYarn(data as YarnRow);
+  const row = data as YarnRow;
+  const current = mapYarn(row);
+
+  if (values.photo) {
+    return uploadYarnImage(
+      supabase,
+      userId,
+      yarnId,
+      values.photo,
+      current.imageStoragePath
+    );
+  }
+
+  return mapYarnWithImage(supabase, row);
 };
 
 /**
- * 남은 중량에서 사용한 양을 차감한다.
+ * 남은 무게에서 사용한 양을 차감한다.
  */
 const deductYarnStock = async (yarnId: string, grams: number): Promise<Yarn> => {
   if (!Number.isFinite(grams) || grams <= 0) {
-    throw new Error("차감할 중량을 0보다 크게 입력해 주세요.");
+    throw new Error("차감할 무게를 0보다 크게 입력해 주세요.");
   }
 
   const current = await fetchYarnDetail(yarnId);
   const remaining = current.remainingGrams;
 
   if (typeof remaining !== "number") {
-    throw new Error("남은 중량이 없어요. 먼저 남은 중량을 입력해 주세요.");
+    throw new Error("남은 무게가 없어요. 먼저 남은 무게를 입력해 주세요.");
   }
 
   if (grams > remaining) {
-    throw new Error("남은 중량보다 많이 차감할 수 없어요.");
+    throw new Error("남은 무게보다 많이 차감할 수 없어요.");
   }
 
   const { supabase, userId } = await requireUserId();
@@ -228,14 +356,25 @@ const deductYarnStock = async (yarnId: string, grams: number): Promise<Yarn> => 
     throw new Error("재고를 차감하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return mapYarn(data as YarnRow);
+  return mapYarnWithImage(supabase, data as YarnRow);
 };
 
 /**
- * 실 재고를 삭제한다.
+ * 실 재고와 사진을 삭제한다.
  */
 const deleteYarn = async (yarnId: string) => {
   const { supabase, userId } = await requireUserId();
+  const current = await fetchYarnDetail(yarnId);
+
+  if (current.imageStoragePath) {
+    const { error: storageError } = await supabase.storage
+      .from(YARN_IMAGE_BUCKET)
+      .remove([current.imageStoragePath]);
+
+    if (storageError && process.env.NODE_ENV === "development") {
+      console.error("[실 사진 삭제 실패]", storageError.message);
+    }
+  }
 
   const { error } = await supabase
     .from("yarns")
