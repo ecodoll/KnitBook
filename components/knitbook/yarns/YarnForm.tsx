@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import type { Yarn } from "@/components/knitbook/types";
+import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,45 +11,57 @@ import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 
 export type YarnFormValues = {
-  brand: string;
   productName: string;
+  brand: string;
   colorName: string;
-  colorCode: string;
-  lotNumber: string;
-  fiber: string;
+  productCode: string;
+  weightGrams: string;
   remainingGrams: string;
-  quantity: string;
-  yarnWeight: string;
-  needleSizeMm: string;
   memo: string;
+  photo: File | null;
 };
 
 type YarnFormProps = {
   initialValues?: Partial<YarnFormValues>;
+  currentImageUrl?: string;
   onSubmit: (values: YarnFormValues) => Promise<void> | void;
   isSubmitting?: boolean;
   submitLabel?: string;
 };
 
 const EMPTY_VALUES: YarnFormValues = {
-  brand: "",
   productName: "",
+  brand: "",
   colorName: "",
-  colorCode: "",
-  lotNumber: "",
-  fiber: "",
+  productCode: "",
+  weightGrams: "",
   remainingGrams: "",
-  quantity: "",
-  yarnWeight: "",
-  needleSizeMm: "",
   memo: "",
+  photo: null,
 };
 
 /**
- * 실 브랜드·품번·LOT·잔량 등 재고 정보를 입력한다.
+ * Yarn 도메인 값을 폼 입력 문자열로 변환한다.
+ */
+const yarnToFormValues = (yarn: Yarn): YarnFormValues => {
+  return {
+    productName: yarn.productName,
+    brand: yarn.brand,
+    colorName: yarn.colorName ?? "",
+    productCode: yarn.productCode ?? "",
+    weightGrams: yarn.weightGrams?.toString() ?? "",
+    remainingGrams: yarn.remainingGrams?.toString() ?? "",
+    memo: yarn.notes ?? "",
+    photo: null,
+  };
+};
+
+/**
+ * 실 이름·브랜드·색깔·제품번호·무게와 사진을 입력한다.
  */
 const YarnForm = ({
   initialValues,
+  currentImageUrl,
   onSubmit,
   isSubmitting = false,
   submitLabel = "실 저장",
@@ -55,27 +69,72 @@ const YarnForm = ({
   const [values, setValues] = useState<YarnFormValues>({
     ...EMPTY_VALUES,
     ...initialValues,
+    photo: null,
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | undefined>();
+  const localPreviewRef = useRef<string | undefined>(undefined);
 
-  const updateField = (key: keyof YarnFormValues, value: string) => {
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) {
+        URL.revokeObjectURL(localPreviewRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * 선택한 사진의 미리보기 URL을 갱신한다.
+   */
+  const replacePhoto = (file: File | null) => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = undefined;
+    }
+
+    const nextUrl = file ? URL.createObjectURL(file) : undefined;
+    localPreviewRef.current = nextUrl;
+    setLocalPreviewUrl(nextUrl);
+    setValues((prev) => ({ ...prev, photo: file }));
+  };
+
+  const previewUrl = localPreviewUrl ?? currentImageUrl;
+
+  const updateField = (
+    key: Exclude<keyof YarnFormValues, "photo">,
+    value: string
+  ) => {
     setValues((prev) => ({ ...prev, [key]: value }));
+  };
+
+  /**
+   * 무게를 바꾸면, 남은 무게가 비어 있거나 이전 무게와 같았던 경우에만 맞춰 준다.
+   */
+  const updateWeightGrams = (value: string) => {
+    setValues((prev) => ({
+      ...prev,
+      weightGrams: value,
+      remainingGrams:
+        prev.remainingGrams === "" || prev.remainingGrams === prev.weightGrams
+          ? value
+          : prev.remainingGrams,
+    }));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setErrorMessage(null);
 
-    if (!values.brand.trim() || !values.productName.trim()) {
-      setErrorMessage("브랜드와 제품명은 필수예요.");
+    if (!values.productName.trim() || !values.brand.trim()) {
+      setErrorMessage("실 이름과 브랜드는 필수예요.");
       return;
     }
 
     try {
       await onSubmit({
         ...values,
-        brand: values.brand.trim(),
         productName: values.productName.trim(),
+        brand: values.brand.trim(),
       });
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
@@ -93,47 +152,74 @@ const YarnForm = ({
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="yarn-brand">브랜드</Label>
-          <Input
-            id="yarn-brand"
-            value={values.brand}
-            onChange={(event) => updateField("brand", event.target.value)}
-            placeholder="예: Drops"
-            required
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="yarn-product">제품명</Label>
-          <Input
-            id="yarn-product"
-            value={values.productName}
-            onChange={(event) => updateField("productName", event.target.value)}
-            placeholder="예: Alaska"
-            required
-            disabled={isSubmitting}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="yarn-photo">실 사진</Label>
+        {previewUrl ? (
+          <div className="overflow-hidden rounded-lg bg-secondary">
+            {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기·스토리지 URL 대응 */}
+            <img
+              src={previewUrl}
+              alt=""
+              className="aspect-square w-full object-cover"
+            />
+          </div>
+        ) : null}
+        <Input
+          id="yarn-photo"
+          type="file"
+          accept={YARN_IMAGE_ACCEPT}
+          onChange={(event) => {
+            replacePhoto(event.target.files?.[0] ?? null);
+          }}
+          disabled={isSubmitting}
+        />
+        <p className="text-xs text-muted-foreground">
+          JPEG, PNG, WebP 사진을 올릴 수 있어요. 최대 8MB.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="yarn-name">실 이름</Label>
+        <Input
+          id="yarn-name"
+          value={values.productName}
+          onChange={(event) => updateField("productName", event.target.value)}
+          placeholder="예: Alaska"
+          required
+          disabled={isSubmitting}
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="yarn-brand">브랜드</Label>
+        <Input
+          id="yarn-brand"
+          value={values.brand}
+          onChange={(event) => updateField("brand", event.target.value)}
+          placeholder="예: Drops"
+          required
+          disabled={isSubmitting}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="yarn-color-name">색상명</Label>
+          <Label htmlFor="yarn-color">색깔</Label>
           <Input
-            id="yarn-color-name"
+            id="yarn-color"
             value={values.colorName}
             onChange={(event) => updateField("colorName", event.target.value)}
+            placeholder="예: Grey"
             disabled={isSubmitting}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="yarn-color-code">색상번호</Label>
+          <Label htmlFor="yarn-code">제품번호</Label>
           <Input
-            id="yarn-color-code"
-            value={values.colorCode}
-            onChange={(event) => updateField("colorCode", event.target.value)}
+            id="yarn-code"
+            value={values.productCode}
+            onChange={(event) => updateField("productCode", event.target.value)}
+            placeholder="예: 1001"
             disabled={isSubmitting}
           />
         </div>
@@ -141,71 +227,28 @@ const YarnForm = ({
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
-          <Label htmlFor="yarn-lot">LOT</Label>
+          <Label htmlFor="yarn-weight">무게 (g)</Label>
           <Input
-            id="yarn-lot"
-            value={values.lotNumber}
-            onChange={(event) => updateField("lotNumber", event.target.value)}
+            id="yarn-weight"
+            type="number"
+            min={0}
+            inputMode="decimal"
+            value={values.weightGrams}
+            onChange={(event) => updateWeightGrams(event.target.value)}
+            placeholder="예: 100"
             disabled={isSubmitting}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="yarn-fiber">소재</Label>
-          <Input
-            id="yarn-fiber"
-            value={values.fiber}
-            onChange={(event) => updateField("fiber", event.target.value)}
-            placeholder="울 80% / 나일론 20%"
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="yarn-remaining">남은 중량 (g)</Label>
+          <Label htmlFor="yarn-remaining">남은 무게 (g)</Label>
           <Input
             id="yarn-remaining"
             type="number"
             min={0}
-            inputMode="numeric"
+            inputMode="decimal"
             value={values.remainingGrams}
             onChange={(event) => updateField("remainingGrams", event.target.value)}
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="yarn-quantity">수량 (볼)</Label>
-          <Input
-            id="yarn-quantity"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={values.quantity}
-            onChange={(event) => updateField("quantity", event.target.value)}
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="yarn-weight">굵기</Label>
-          <Input
-            id="yarn-weight"
-            value={values.yarnWeight}
-            onChange={(event) => updateField("yarnWeight", event.target.value)}
-            placeholder="DK, Worsted…"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="yarn-needle">권장 바늘 (mm)</Label>
-          <Input
-            id="yarn-needle"
-            value={values.needleSizeMm}
-            onChange={(event) => updateField("needleSizeMm", event.target.value)}
-            placeholder="4.0 ~ 5.0"
+            placeholder="예: 80"
             disabled={isSubmitting}
           />
         </div>
@@ -235,4 +278,5 @@ const YarnForm = ({
   );
 };
 
+export { yarnToFormValues };
 export default YarnForm;
