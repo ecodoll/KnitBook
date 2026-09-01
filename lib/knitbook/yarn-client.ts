@@ -4,12 +4,12 @@ import type { Yarn } from "@/components/knitbook/types";
 import type { YarnFormValues } from "@/components/knitbook/yarns/YarnForm";
 import {
   buildYarnImagePath,
-  getYarnImageExtension,
-  YARN_IMAGE_BUCKET,
-  YARN_IMAGE_MAX_BYTES,
+  mapYarnImageUploadError,
+  YARN_IMAGE_BUCKETS,
   YARN_SELECT,
 } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
+import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
 import {
   createSignedYarnImageUrl,
   createSignedYarnImageUrls,
@@ -71,23 +71,6 @@ const parseOptionalNumber = (value: string, label: string) => {
 };
 
 /**
- * 실 사진 파일이 허용된 이미지인지 검사한다.
- */
-const assertYarnImageFile = (file: File) => {
-  const isImage =
-    file.type.startsWith("image/") ||
-    /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
-
-  if (!isImage) {
-    throw new Error("사진 파일만 올릴 수 있어요.");
-  }
-
-  if (file.size > YARN_IMAGE_MAX_BYTES) {
-    throw new Error("사진 용량은 8MB 이하로 올려 주세요.");
-  }
-};
-
-/**
  * 실 등록/수정 폼 값을 DB payload로 변환한다.
  */
 const toYarnWritePayload = (values: YarnFormValues): YarnWritePayload => {
@@ -130,6 +113,52 @@ const mapYarnWithImage = async (
 };
 
 /**
+ * 실 사진을 사용 가능한 Storage 버킷에 올린다.
+ */
+const uploadYarnImageToAvailableBucket = async (
+  supabase: ReturnType<typeof createClient>,
+  storagePath: string,
+  body: Blob,
+  contentType: string
+) => {
+  let lastError: { message?: string; statusCode?: string | number } | null = null;
+
+  for (const bucket of YARN_IMAGE_BUCKETS) {
+    const { error } = await supabase.storage.from(bucket).upload(storagePath, body, {
+      contentType,
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+    if (!error) {
+      return;
+    }
+
+    lastError = error;
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[실 사진 업로드 실패:${bucket}]`, error);
+    }
+  }
+
+  throw new Error(mapYarnImageUploadError(lastError ?? {}));
+};
+
+/**
+ * 이전 실 사진을 모든 후보 버킷에서 지운다.
+ */
+const removeYarnImageFromBuckets = async (
+  supabase: ReturnType<typeof createClient>,
+  storagePath: string
+) => {
+  for (const bucket of YARN_IMAGE_BUCKETS) {
+    const { error } = await supabase.storage.from(bucket).remove([storagePath]);
+    if (error && process.env.NODE_ENV === "development") {
+      console.error(`[실 사진 삭제 실패:${bucket}]`, error.message);
+    }
+  }
+};
+
+/**
  * 실 사진을 Storage에 올리고 DB 경로를 갱신한다.
  */
 const uploadYarnImage = async (
@@ -139,36 +168,18 @@ const uploadYarnImage = async (
   file: File,
   previousPath?: string
 ) => {
-  assertYarnImageFile(file);
+  const prepared = await prepareYarnImageFile(file);
+  const storagePath = buildYarnImagePath(userId, yarnId, prepared.extension);
 
-  const extension = getYarnImageExtension(file);
-  const storagePath = buildYarnImagePath(userId, yarnId, extension);
-  const contentType = file.type.startsWith("image/")
-    ? file.type
-    : "image/jpeg";
-
-  const { error: uploadError } = await supabase.storage
-    .from(YARN_IMAGE_BUCKET)
-    .upload(storagePath, file, {
-      contentType,
-      upsert: true,
-    });
-
-  if (uploadError) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[실 사진 업로드 실패]", uploadError);
-    }
-    throw new Error("실 사진을 올리지 못했어요. 잠시 후 다시 시도해 주세요.");
-  }
+  await uploadYarnImageToAvailableBucket(
+    supabase,
+    storagePath,
+    prepared.body,
+    prepared.contentType
+  );
 
   if (previousPath && previousPath !== storagePath) {
-    const { error: removeError } = await supabase.storage
-      .from(YARN_IMAGE_BUCKET)
-      .remove([previousPath]);
-
-    if (removeError && process.env.NODE_ENV === "development") {
-      console.error("[이전 실 사진 삭제 실패]", removeError);
-    }
+    await removeYarnImageFromBuckets(supabase, previousPath);
   }
 
   const { data, error } = await supabase
@@ -367,13 +378,7 @@ const deleteYarn = async (yarnId: string) => {
   const current = await fetchYarnDetail(yarnId);
 
   if (current.imageStoragePath) {
-    const { error: storageError } = await supabase.storage
-      .from(YARN_IMAGE_BUCKET)
-      .remove([current.imageStoragePath]);
-
-    if (storageError && process.env.NODE_ENV === "development") {
-      console.error("[실 사진 삭제 실패]", storageError.message);
-    }
+    await removeYarnImageFromBuckets(supabase, current.imageStoragePath);
   }
 
   const { error } = await supabase
