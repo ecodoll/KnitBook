@@ -57,6 +57,25 @@ export type Project = {
   lastNote?: string;
   patternId?: string;
   patternTitle?: string;
+  size?: string;
+  startedAt?: string;
+  targetDate?: string;
+  completedAt?: string;
+  notes?: string;
+  yarns?: ProjectYarnLink[];
+};
+
+/** 작품에 연결한 실 */
+export type ProjectYarnLink = {
+  id: string;
+  yarnId: string;
+  brand: string;
+  productName: string;
+  colorName?: string;
+  plannedQuantity?: number;
+  usedQuantity?: number;
+  remainingGrams?: number;
+  needleSizeMm?: string;
 };
 
 /** 작품 작업 기록(Quick Log) */

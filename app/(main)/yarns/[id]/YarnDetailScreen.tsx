@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Yarn } from "@/components/knitbook/types";
+import type { YarnLinkedProject } from "@/lib/knitbook/project-data";
 import YarnForm, { yarnToFormValues } from "@/components/knitbook/yarns/YarnForm";
 import YarnStockAdjustForm from "@/components/knitbook/yarns/YarnStockAdjustForm";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
@@ -29,6 +30,7 @@ import { ChevronLeft, Pencil, Trash2 } from "lucide-react";
 
 type YarnDetailScreenProps = {
   initialYarn: Yarn;
+  linkedProjects: YarnLinkedProject[];
 };
 
 type YarnInfoRowProps = {
@@ -59,7 +61,7 @@ const YarnInfoRow = ({ label, value, suffix }: YarnInfoRowProps) => {
 /**
  * 실 상세·재고 차감·수정·삭제 화면을 구성한다.
  */
-const YarnDetailScreen = ({ initialYarn }: YarnDetailScreenProps) => {
+const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps) => {
   const router = useRouter();
   const [yarn, setYarn] = useState(initialYarn);
   const [isEditing, setIsEditing] = useState(false);
@@ -237,6 +239,33 @@ const YarnDetailScreen = ({ initialYarn }: YarnDetailScreenProps) => {
             <YarnInfoRow label="가격" value={yarn.purchasePrice} />
             <YarnInfoRow label="메모" value={yarn.notes} />
           </dl>
+        </CardContent>
+      </Card>
+
+      <Card size="sm">
+        <CardHeader>
+          <CardTitle>연결된 작품</CardTitle>
+          <CardDescription>이 실을 사용하는 작품이에요.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {linkedProjects.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              아직 이 실을 쓰는 작품이 없어요.
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {linkedProjects.map((project) => (
+                <li key={project.id}>
+                  <Link
+                    href={`/projects/${project.id}`}
+                    className="block rounded-lg border border-border px-3 py-2 text-sm hover:bg-secondary/40"
+                  >
+                    {project.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </CardContent>
       </Card>
 

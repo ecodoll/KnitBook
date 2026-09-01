@@ -15,7 +15,7 @@ import type {
   Project,
   YarnInventorySummary,
 } from "@/components/knitbook/types";
-import { createClient } from "@/lib/supabase/client";
+import { saveWorkLog } from "@/lib/knitbook/project-client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -78,71 +78,10 @@ const HomeDashboard = ({
 
     setIsSavingLog(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
-
-      if (authError || !user) {
-        throw new Error("로그인이 만료되었어요. 다시 로그인해 주세요.");
-      }
-
-      const { error: logError } = await supabase.from("project_logs").insert({
-        project_id: activeProject.id,
-        row_count: values.currentRow,
-        progress_percent: values.progressPercent,
-        work_minutes: values.durationMinutes,
-        memo: values.memo || null,
-      });
-
-      if (logError) {
-        throw logError;
-      }
-
-      const projectPatch: {
-        current_row?: number | null;
-        progress_percent?: number | null;
-        notes?: string | null;
-      } = {};
-
-      if (values.currentRow !== null) {
-        projectPatch.current_row = values.currentRow;
-      }
-      if (values.progressPercent !== null) {
-        projectPatch.progress_percent = values.progressPercent;
-      }
-      if (values.memo.trim()) {
-        projectPatch.notes = values.memo.trim();
-      }
-
-      if (Object.keys(projectPatch).length > 0) {
-        const { error: projectError } = await supabase
-          .from("projects")
-          .update(projectPatch)
-          .eq("id", activeProject.id)
-          .eq("user_id", user.id);
-
-        if (projectError) {
-          throw projectError;
-        }
-      }
+      const { project } = await saveWorkLog(activeProject.id, values);
 
       setProjects((prev) =>
-        prev.map((project) => {
-          if (project.id !== activeProject.id) {
-            return project;
-          }
-
-          return {
-            ...project,
-            currentRow: values.currentRow ?? project.currentRow,
-            progressPercent:
-              values.progressPercent ?? project.progressPercent,
-            lastNote: values.memo.trim() || project.lastNote,
-            lastWorkedAt: new Date().toISOString(),
-          };
-        })
+        prev.map((item) => (item.id === project.id ? { ...item, ...project } : item))
       );
 
       setLogOpen(false);

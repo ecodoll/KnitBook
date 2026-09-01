@@ -35,6 +35,9 @@ export { default as ProjectList } from "@/components/knitbook/projects/ProjectLi
 export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";
 export { default as ProjectStatusBadge } from "@/components/knitbook/projects/ProjectStatusBadge";
 export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLogForm";
+export { default as ProjectForm } from "@/components/knitbook/projects/ProjectForm";
+export { default as ProjectYarnPicker } from "@/components/knitbook/projects/ProjectYarnPicker";
+export { default as ProjectLogList } from "@/components/knitbook/projects/ProjectLogList";
 
 export { default as YarnCard } from "@/components/knitbook/yarns/YarnCard";
 export { default as YarnList, YarnFilterBar } from "@/components/knitbook/yarns/YarnList";

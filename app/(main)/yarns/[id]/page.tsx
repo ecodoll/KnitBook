@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import YarnDetailScreen from "@/app/(main)/yarns/[id]/YarnDetailScreen";
+import { getYarnLinkedProjects, type YarnLinkedProject } from "@/lib/knitbook/project-data";
 import { getYarnDetailPageData } from "@/lib/knitbook/yarn-data";
 
 type YarnDetailPageProps = {
@@ -34,8 +35,12 @@ const YarnDetailPage = async ({ params }: YarnDetailPageProps) => {
   const { id } = await params;
 
   let data;
+  let linkedProjects: YarnLinkedProject[] = [];
   try {
     data = await getYarnDetailPageData(id);
+    if (data) {
+      linkedProjects = await getYarnLinkedProjects(id);
+    }
   } catch {
     redirect("/login");
   }
@@ -44,7 +49,13 @@ const YarnDetailPage = async ({ params }: YarnDetailPageProps) => {
     notFound();
   }
 
-  return <YarnDetailScreen key={data.yarn.id} initialYarn={data.yarn} />;
+  return (
+    <YarnDetailScreen
+      key={data.yarn.id}
+      initialYarn={data.yarn}
+      linkedProjects={linkedProjects}
+    />
+  );
 };
 
 export default YarnDetailPage;
