@@ -36,6 +36,7 @@ const PatternCard = ({ pattern, compact = false, className }: PatternCardProps) 
           coverImageUrl={pattern.coverImageUrl}
           coverStoragePath={pattern.coverStoragePath}
           pdfStoragePath={pattern.pdfStoragePath}
+          compact={compact}
         />
         {pattern.isFavorite ? (
           <span className="absolute top-2 right-2 rounded-full bg-card/90 p-1 text-brand-berry">

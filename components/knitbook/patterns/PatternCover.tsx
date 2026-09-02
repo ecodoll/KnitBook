@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
 import KnitSpinner from "@/components/knitbook/shared/KnitSpinner";
+import { cn } from "@/lib/utils";
 import {
   ensurePatternCover,
   resolvePatternCoverUrl,
@@ -14,6 +15,8 @@ type PatternCoverProps = {
   coverImageUrl?: string;
   coverStoragePath?: string;
   pdfStoragePath?: string;
+  /** 홈 등 작은 썸네일용 아이콘 크기 */
+  compact?: boolean;
 };
 
 /**
@@ -25,6 +28,7 @@ const PatternCover = ({
   coverImageUrl,
   coverStoragePath,
   pdfStoragePath,
+  compact = false,
 }: PatternCoverProps) => {
   const [resolvedSrc, setResolvedSrc] = useState<string>();
   const [didFail, setDidFail] = useState(false);
@@ -92,13 +96,18 @@ const PatternCover = ({
   if (isGenerating) {
     return (
       <KnitSpinner
-        className="size-7 text-muted-foreground"
+        className={cn("text-muted-foreground", compact ? "size-5" : "size-7")}
         label={`${title} 썸네일을 만드는 중`}
       />
     );
   }
 
-  return <BookOpen className="size-8 text-muted-foreground" aria-hidden />;
+  return (
+    <BookOpen
+      className={cn("text-muted-foreground", compact ? "size-5" : "size-8")}
+      aria-hidden
+    />
+  );
 };
 
 export default PatternCover;
