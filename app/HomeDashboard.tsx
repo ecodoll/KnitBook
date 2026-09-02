@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import HomeAiTeaser from "@/components/knitbook/home/HomeAiTeaser";
 import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
 import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
@@ -16,14 +16,6 @@ import type {
   YarnInventorySummary,
 } from "@/components/knitbook/types";
 import { saveWorkLog } from "@/lib/knitbook/project-client";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -31,7 +23,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Sparkles } from "lucide-react";
 
 type HomeDashboardProps = {
   nickname: string;
@@ -96,7 +87,7 @@ const HomeDashboard = ({
   };
 
   return (
-    <div className="space-y-8 pb-2">
+    <div className="space-y-4 pb-2">
       <HomeGreeting nickname={nickname} />
 
       <InProgressSection
@@ -108,36 +99,7 @@ const HomeDashboard = ({
 
       <YarnSummarySection summary={initialYarnSummary} />
 
-      <section className="space-y-3" aria-labelledby="ai-teaser-heading">
-        <h2 id="ai-teaser-heading" className="text-base font-medium">
-          AI 추천
-        </h2>
-        <Card size="sm" className="border-dashed">
-          <CardHeader className="flex-row items-start gap-3">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-              <Sparkles className="size-4" aria-hidden />
-            </span>
-            <div className="space-y-1">
-              <CardTitle className="text-sm">곧 만나요</CardTitle>
-              <CardDescription>
-                &ldquo;이 실로 베스트를 만들어보세요.&rdquo; 같은 맞춤 추천은
-                도안·실 데이터가 쌓인 뒤 제공될 예정이에요.
-              </CardDescription>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              nativeButton={false}
-              render={<Link href="/ai" />}
-            >
-              AI 메뉴 미리보기
-            </Button>
-          </CardContent>
-        </Card>
-      </section>
+      <HomeAiTeaser />
 
       <Dialog
         open={logOpen}
