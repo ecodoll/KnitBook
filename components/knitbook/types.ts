@@ -50,6 +50,8 @@ export type Project = {
   title: string;
   status: ProjectStatus;
   coverImageUrl?: string;
+  /** Storage에 저장된 대표 사진 경로. 클라이언트에서 서명해 표시한다. */
+  coverImageStoragePath?: string;
   progressPercent: number;
   currentRow?: number;
   totalRows?: number;

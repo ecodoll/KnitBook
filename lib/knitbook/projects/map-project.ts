@@ -4,6 +4,7 @@ import type {
   ProjectYarnLink,
   WorkLog,
 } from "@/components/knitbook/types";
+import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
 import { toNumber } from "@/lib/knitbook/yarns/map-yarn";
 
 export type ProjectRow = {
@@ -76,11 +77,15 @@ const mapProject = (
   row: ProjectRow,
   latestLog?: ProjectLogRow | null
 ): Project => {
+  const coverRaw = row.cover_image_url;
+
   return {
     id: row.id,
     title: row.title,
     status: row.status,
-    coverImageUrl: row.cover_image_url ?? undefined,
+    coverImageUrl: isHttpUrl(coverRaw) ? coverRaw : undefined,
+    coverImageStoragePath:
+      coverRaw && !isHttpUrl(coverRaw) ? coverRaw : undefined,
     progressPercent: toNumber(row.progress_percent) ?? 0,
     currentRow: row.current_row ?? undefined,
     totalRows: row.total_row ?? undefined,

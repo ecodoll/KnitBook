@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 
 export type QuickLogValues = {
+  loggedOn: string;
   currentRow: number | null;
   progressPercent: number | null;
   durationMinutes: number | null;
@@ -35,6 +36,9 @@ const QuickLogForm = ({
   onCancel,
   isSubmitting = false,
 }: QuickLogFormProps) => {
+  const [loggedOn, setLoggedOn] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [currentRow, setCurrentRow] = useState(initialRow?.toString() ?? "");
   const [progressPercent, setProgressPercent] = useState(
     initialPercent?.toString() ?? ""
@@ -56,8 +60,14 @@ const QuickLogForm = ({
       return;
     }
 
+    if (!loggedOn) {
+      setErrorMessage("기록 날짜를 선택해 주세요.");
+      return;
+    }
+
     try {
       await onSubmit({
+        loggedOn,
         currentRow: Number.isFinite(rowValue) ? rowValue : null,
         progressPercent: Number.isFinite(percentValue) ? percentValue : null,
         durationMinutes: Number.isFinite(durationValue) ? durationValue : null,
@@ -83,6 +93,17 @@ const QuickLogForm = ({
       </div>
 
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="log-date">날짜</Label>
+        <Input
+          id="log-date"
+          type="date"
+          value={loggedOn}
+          onChange={(event) => setLoggedOn(event.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">

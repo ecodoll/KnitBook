@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type { Pattern, Project, ProjectStatus, Yarn } from "@/components/knitbook/types";
 import ProjectYarnPicker, {
   type ProjectYarnSelection,
 } from "@/components/knitbook/projects/ProjectYarnPicker";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
+import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +30,14 @@ export type ProjectFormValues = {
   totalRows: string;
   progressPercent: string;
   yarns: ProjectYarnSelection[];
+  photo: File | null;
 };
 
 type ProjectFormProps = {
   patterns: Pattern[];
   yarns: Yarn[];
   initialValues?: Partial<ProjectFormValues>;
+  currentImageUrl?: string;
   onSubmit: (values: ProjectFormValues) => Promise<void> | void;
   isSubmitting?: boolean;
   submitLabel?: string;
@@ -60,6 +63,7 @@ const EMPTY_VALUES: ProjectFormValues = {
   totalRows: "",
   progressPercent: "0",
   yarns: [],
+  photo: null,
 };
 
 /**
@@ -83,6 +87,7 @@ const projectToFormValues = (project: Project): ProjectFormValues => {
       plannedQuantity: yarn.plannedQuantity?.toString() ?? "",
       usedQuantity: yarn.usedQuantity?.toString() ?? "",
     })),
+    photo: null,
   };
 };
 
@@ -93,6 +98,7 @@ const ProjectForm = ({
   patterns,
   yarns,
   initialValues,
+  currentImageUrl,
   onSubmit,
   isSubmitting = false,
   submitLabel = "작품 저장",
@@ -101,10 +107,38 @@ const ProjectForm = ({
     ...EMPTY_VALUES,
     ...initialValues,
     yarns: initialValues?.yarns ?? EMPTY_VALUES.yarns,
+    photo: null,
   });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [localPreviewUrl, setLocalPreviewUrl] = useState<string | undefined>();
+  const localPreviewRef = useRef<string | undefined>(undefined);
 
-  const updateField = <K extends keyof ProjectFormValues>(
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) {
+        URL.revokeObjectURL(localPreviewRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * 선택한 대표 사진의 미리보기 URL을 갱신한다.
+   */
+  const replacePhoto = (file: File | null) => {
+    if (localPreviewRef.current) {
+      URL.revokeObjectURL(localPreviewRef.current);
+      localPreviewRef.current = undefined;
+    }
+
+    const nextUrl = file ? URL.createObjectURL(file) : undefined;
+    localPreviewRef.current = nextUrl;
+    setLocalPreviewUrl(nextUrl);
+    setValues((prev) => ({ ...prev, photo: file }));
+  };
+
+  const previewUrl = localPreviewUrl ?? currentImageUrl;
+
+  const updateField = <K extends Exclude<keyof ProjectFormValues, "photo">>(
     key: K,
     value: ProjectFormValues[K]
   ) => {
@@ -140,6 +174,32 @@ const ProjectForm = ({
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="project-photo">대표 사진</Label>
+        {previewUrl ? (
+          <div className="overflow-hidden rounded-lg bg-secondary">
+            {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기·스토리지 URL 대응 */}
+            <img
+              src={previewUrl}
+              alt=""
+              className="aspect-square w-full object-cover"
+            />
+          </div>
+        ) : null}
+        <Input
+          id="project-photo"
+          type="file"
+          accept={YARN_IMAGE_ACCEPT}
+          onChange={(event) => {
+            replacePhoto(event.target.files?.[0] ?? null);
+          }}
+          disabled={isSubmitting}
+        />
+        <p className="text-xs text-muted-foreground">
+          JPEG, PNG, WebP 사진을 올릴 수 있어요. 휴대폰 사진은 자동으로 줄여 저장해요.
+        </p>
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="project-title">작품 이름</Label>

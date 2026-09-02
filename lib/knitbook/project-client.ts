@@ -4,7 +4,9 @@ import type { Project, ProjectStatus, WorkLog } from "@/components/knitbook/type
 import type { QuickLogValues } from "@/components/knitbook/projects/QuickLogForm";
 import type { ProjectFormValues } from "@/components/knitbook/projects/ProjectForm";
 import {
+  buildProjectCoverPath,
   PROJECT_DETAIL_SELECT,
+  PROJECT_IMAGE_BUCKETS,
   PROJECT_SELECT,
 } from "@/lib/knitbook/projects/constants";
 import {
@@ -13,6 +15,9 @@ import {
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
+import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
+import { mapYarnImageUploadError } from "@/lib/knitbook/yarns/constants";
+import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -170,6 +175,101 @@ const toProjectWritePayload = (values: ProjectFormValues, userId: string) => {
 };
 
 /**
+ * 작품 대표 사진을 사용 가능한 Storage 버킷에 올린다.
+ */
+const uploadProjectCoverToAvailableBucket = async (
+  supabase: ReturnType<typeof createClient>,
+  storagePath: string,
+  body: Blob,
+  contentType: string
+) => {
+  let lastError: { message?: string } | null = null;
+
+  for (const bucket of PROJECT_IMAGE_BUCKETS) {
+    const { error } = await supabase.storage.from(bucket).upload(storagePath, body, {
+      contentType,
+      cacheControl: "3600",
+      upsert: true,
+    });
+
+    if (!error) {
+      return;
+    }
+
+    lastError = error;
+    if (process.env.NODE_ENV === "development") {
+      console.error(`[작품 사진 업로드 실패:${bucket}]`, error);
+    }
+  }
+
+  throw new Error(mapYarnImageUploadError(lastError ?? {}));
+};
+
+/**
+ * 작품 사진을 모든 후보 버킷에서 지운다.
+ */
+const removeProjectCoverFromBuckets = async (
+  supabase: ReturnType<typeof createClient>,
+  storagePath: string
+) => {
+  for (const bucket of PROJECT_IMAGE_BUCKETS) {
+    const { error } = await supabase.storage.from(bucket).remove([storagePath]);
+    if (error && process.env.NODE_ENV === "development") {
+      console.error(`[작품 사진 삭제 실패:${bucket}]`, error.message);
+    }
+  }
+};
+
+/**
+ * 작품 대표 사진을 올리고 DB 경로를 갱신한다.
+ */
+const uploadProjectCover = async (
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  projectId: string,
+  file: File,
+  previousPath?: string
+) => {
+  const prepared = await prepareYarnImageFile(file);
+  const storagePath = buildProjectCoverPath(userId, projectId, prepared.extension);
+
+  await uploadProjectCoverToAvailableBucket(
+    supabase,
+    storagePath,
+    prepared.body,
+    prepared.contentType
+  );
+
+  if (previousPath && previousPath !== storagePath) {
+    await removeProjectCoverFromBuckets(supabase, previousPath);
+  }
+
+  const { error } = await supabase
+    .from("projects")
+    .update({ cover_image_url: storagePath })
+    .eq("id", projectId)
+    .eq("user_id", userId);
+
+  if (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작품 사진 경로 저장 실패]", error);
+    }
+    throw new Error("작품 사진을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+};
+
+/**
+ * 작품에 서명된 대표 사진 URL을 붙인다.
+ */
+const withSignedCover = async (
+  supabase: ReturnType<typeof createClient>,
+  project: Project
+): Promise<Project> => {
+  const [signed] = await attachSignedProjectCovers(supabase, [project]);
+  return signed;
+};
+
+/**
  * 사용자의 작품 목록을 조회한다.
  */
 const fetchProjects = async (): Promise<Project[]> => {
@@ -188,7 +288,10 @@ const fetchProjects = async (): Promise<Project[]> => {
     throw new Error("작품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return ((data ?? []) as ProjectRow[]).map((row) => mapProject(row));
+  return attachSignedProjectCovers(
+    supabase,
+    ((data ?? []) as ProjectRow[]).map((row) => mapProject(row))
+  );
 };
 
 /**
@@ -211,7 +314,7 @@ const fetchProjectDetail = async (projectId: string): Promise<Project> => {
     throw new Error("작품을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return mapProject(data as ProjectRow);
+  return withSignedCover(supabase, mapProject(data as ProjectRow));
 };
 
 /**
@@ -234,7 +337,21 @@ const createProject = async (values: ProjectFormValues): Promise<Project> => {
   }
 
   const projectId = (data as ProjectRow).id;
-  await replaceProjectYarns(supabase, projectId, userId, values.yarns);
+
+  try {
+    await replaceProjectYarns(supabase, projectId, userId, values.yarns);
+    if (values.photo) {
+      await uploadProjectCover(supabase, userId, projectId, values.photo);
+    }
+  } catch (error) {
+    await supabase.from("projects").delete().eq("id", projectId).eq("user_id", userId);
+    await refreshYarnInUse(
+      supabase,
+      userId,
+      values.yarns.map((item) => item.yarnId)
+    );
+    throw error;
+  }
 
   return fetchProjectDetail(projectId);
 };
@@ -270,6 +387,16 @@ const updateProject = async (
     values.yarns,
     previousYarnIds
   );
+
+  if (values.photo) {
+    await uploadProjectCover(
+      supabase,
+      userId,
+      projectId,
+      values.photo,
+      current.coverImageStoragePath
+    );
+  }
 
   return fetchProjectDetail(projectId);
 };
@@ -356,6 +483,7 @@ const saveWorkLog = async (
     .from("project_logs")
     .insert({
       project_id: projectId,
+      logged_on: values.loggedOn || new Date().toISOString().slice(0, 10),
       row_count: values.currentRow,
       progress_percent: values.progressPercent,
       work_minutes: values.durationMinutes,
@@ -419,6 +547,10 @@ const deleteProject = async (projectId: string) => {
   const { supabase, userId } = await requireUserId();
   const current = await fetchProjectDetail(projectId);
   const yarnIds = (current.yarns ?? []).map((yarn) => yarn.yarnId);
+
+  if (current.coverImageStoragePath) {
+    await removeProjectCoverFromBuckets(supabase, current.coverImageStoragePath);
+  }
 
   const { error } = await supabase
     .from("projects")

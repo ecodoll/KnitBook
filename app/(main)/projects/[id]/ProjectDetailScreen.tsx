@@ -149,6 +149,7 @@ const ProjectDetailScreen = ({
               patterns={patterns}
               yarns={yarns}
               initialValues={projectToFormValues(project)}
+              currentImageUrl={project.coverImageUrl}
               isSubmitting={isSaving}
               submitLabel="변경 저장"
               onSubmit={async (values) => {
@@ -216,13 +217,33 @@ const ProjectDetailScreen = ({
       ) : null}
 
       <Card size="sm">
-        <CardHeader className="space-y-2">
+        <CardHeader className="space-y-3">
+          {project.coverImageUrl ? (
+            <div className="overflow-hidden rounded-lg bg-secondary">
+              {/* eslint-disable-next-line @next/next/no-img-element -- 스토리지 서명 URL 대응 */}
+              <img
+                src={project.coverImageUrl}
+                alt={`${project.title} 사진`}
+                className="aspect-square w-full object-cover"
+              />
+            </div>
+          ) : null}
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-lg">{project.title}</CardTitle>
             <ProjectStatusBadge status={project.status} />
           </div>
           {project.size ? (
             <CardDescription>사이즈 {project.size}</CardDescription>
+          ) : null}
+          {project.startedAt || project.targetDate ? (
+            <CardDescription>
+              {[
+                project.startedAt ? `시작 ${project.startedAt}` : null,
+                project.targetDate ? `목표 ${project.targetDate}` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </CardDescription>
           ) : null}
         </CardHeader>
         <CardContent className="space-y-4">

@@ -679,3 +679,69 @@ create policy "yarn_images_delete_own"
     bucket_id = 'yarn-images'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------------
+-- Storage: 작품 대표 사진 (사용자별 private bucket, 서명 URL로 조회)
+-- 앱은 project-images가 없으면 yarn-images / pattern-pdfs로 폴백한다.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'project-images',
+  'project-images',
+  false,
+  8388608,
+  array[
+    'image/jpeg',
+    'image/jpg',
+    'image/pjpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif'
+  ]
+)
+on conflict (id) do update
+set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "project_images_insert_own" on storage.objects;
+drop policy if exists "project_images_select_own" on storage.objects;
+drop policy if exists "project_images_update_own" on storage.objects;
+drop policy if exists "project_images_delete_own" on storage.objects;
+
+create policy "project_images_insert_own"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_select_own"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_update_own"
+  on storage.objects for update
+  to authenticated
+  using (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_delete_own"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
