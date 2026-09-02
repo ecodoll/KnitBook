@@ -1,5 +1,5 @@
 import {
-  YARN_IMAGE_BUCKET,
+  YARN_IMAGE_BUCKETS,
   YARN_SIGNED_URL_TTL,
 } from "@/lib/knitbook/yarns/constants";
 import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
@@ -47,18 +47,25 @@ const createSignedYarnImageUrl = async (
     return storagePath;
   }
 
-  const { data, error } = await supabase.storage
-    .from(YARN_IMAGE_BUCKET)
-    .createSignedUrl(storagePath, YARN_SIGNED_URL_TTL);
+  let lastError: { message: string } | null = null;
 
-  if (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[실 사진 서명 URL 생성 실패]", error.message);
+  for (const bucket of YARN_IMAGE_BUCKETS) {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(storagePath, YARN_SIGNED_URL_TTL);
+
+    if (!error && data?.signedUrl) {
+      return data.signedUrl;
     }
-    return undefined;
+
+    lastError = error;
   }
 
-  return data?.signedUrl;
+  if (lastError && process.env.NODE_ENV === "development") {
+    console.error("[실 사진 서명 URL 생성 실패]", lastError.message);
+  }
+
+  return undefined;
 };
 
 /**
@@ -84,20 +91,26 @@ const createSignedYarnImageUrls = async (
     }
   }
 
-  if (uniquePaths.length > 0) {
+  for (const bucket of YARN_IMAGE_BUCKETS) {
+    const remaining = uniquePaths.filter((path) => !signedByPath.has(path));
+    if (remaining.length === 0) {
+      break;
+    }
+
     const { data, error } = await supabase.storage
-      .from(YARN_IMAGE_BUCKET)
-      .createSignedUrls(uniquePaths, YARN_SIGNED_URL_TTL);
+      .from(bucket)
+      .createSignedUrls(remaining, YARN_SIGNED_URL_TTL);
 
     if (error) {
       if (process.env.NODE_ENV === "development") {
         console.error("[실 사진 서명 URL 생성 실패]", error.message);
       }
-    } else {
-      for (const item of data ?? []) {
-        if (item.path && item.signedUrl) {
-          signedByPath.set(item.path, item.signedUrl);
-        }
+      continue;
+    }
+
+    for (const item of data ?? []) {
+      if (item.path && item.signedUrl) {
+        signedByPath.set(item.path, item.signedUrl);
       }
     }
   }

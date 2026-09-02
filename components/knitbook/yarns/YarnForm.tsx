@@ -174,7 +174,7 @@ const YarnForm = ({
           disabled={isSubmitting}
         />
         <p className="text-xs text-muted-foreground">
-          JPEG, PNG, WebP 사진을 올릴 수 있어요. 최대 8MB.
+          JPEG, PNG, WebP 사진을 올릴 수 있어요. 휴대폰 사진은 자동으로 줄여 저장해요.
         </p>
       </div>
 

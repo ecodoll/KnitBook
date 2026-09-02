@@ -616,10 +616,28 @@ create policy "pattern_pdfs_delete_own"
 
 -- ---------------------------------------------------------------------------
 -- Storage: 실 사진 (사용자별 private bucket, 서명 URL로 조회)
+-- 앱은 yarn-images가 없으면 pattern-pdfs로 폴백한다.
 -- ---------------------------------------------------------------------------
-insert into storage.buckets (id, name, public)
-values ('yarn-images', 'yarn-images', false)
-on conflict (id) do nothing;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'yarn-images',
+  'yarn-images',
+  false,
+  8388608,
+  array[
+    'image/jpeg',
+    'image/jpg',
+    'image/pjpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif'
+  ]
+)
+on conflict (id) do update
+set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
 
 drop policy if exists "yarn_images_insert_own" on storage.objects;
 drop policy if exists "yarn_images_select_own" on storage.objects;
