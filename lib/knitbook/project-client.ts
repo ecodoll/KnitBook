@@ -7,8 +7,11 @@ import {
   buildProjectCoverPath,
   buildProjectLogPhotoPath,
   PROJECT_DETAIL_SELECT,
+  PROJECT_DETAIL_SELECT_CORE,
   PROJECT_IMAGE_BUCKETS,
-  PROJECT_SELECT,
+  PROJECT_LIST_SELECT,
+  PROJECT_LIST_SELECT_CORE,
+  PROJECT_SELECT_CORE,
 } from "@/lib/knitbook/projects/constants";
 import {
   mapProject,
@@ -23,6 +26,10 @@ import {
 import { mapYarnImageUploadError } from "@/lib/knitbook/yarns/constants";
 import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
 import { createClient } from "@/lib/supabase/client";
+import {
+  selectWithGaugeFallback,
+  writeWithGaugeFallback,
+} from "@/lib/knitbook/projects/query";
 
 /**
  * 로그인 사용자 ID를 반환한다. 없으면 오류를 던진다.
@@ -281,11 +288,15 @@ const withSignedCover = async (
 const fetchProjects = async (): Promise<Project[]> => {
   const { supabase, userId } = await requireUserId();
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select(`${PROJECT_SELECT}, patterns(id, title)`)
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await selectWithGaugeFallback(
+    (columns) =>
+      supabase
+        .from("projects")
+        .select(columns)
+        .eq("user_id", userId)
+        .order("updated_at", { ascending: false }),
+    { primary: PROJECT_LIST_SELECT, fallback: PROJECT_LIST_SELECT_CORE }
+  );
 
   if (error) {
     if (process.env.NODE_ENV === "development") {
@@ -296,7 +307,7 @@ const fetchProjects = async (): Promise<Project[]> => {
 
   return attachSignedProjectCovers(
     supabase,
-    ((data ?? []) as ProjectRow[]).map((row) => mapProject(row))
+    ((data ?? []) as unknown as ProjectRow[]).map((row) => mapProject(row))
   );
 };
 
@@ -306,21 +317,29 @@ const fetchProjects = async (): Promise<Project[]> => {
 const fetchProjectDetail = async (projectId: string): Promise<Project> => {
   const { supabase, userId } = await requireUserId();
 
-  const { data, error } = await supabase
-    .from("projects")
-    .select(PROJECT_DETAIL_SELECT)
-    .eq("id", projectId)
-    .eq("user_id", userId)
-    .maybeSingle();
+  const { data, error } = await selectWithGaugeFallback(
+    (columns) =>
+      supabase
+        .from("projects")
+        .select(columns)
+        .eq("id", projectId)
+        .eq("user_id", userId)
+        .maybeSingle(),
+    { primary: PROJECT_DETAIL_SELECT, fallback: PROJECT_DETAIL_SELECT_CORE }
+  );
 
-  if (error || !data) {
+  if (error) {
     if (process.env.NODE_ENV === "development") {
       console.error("[작품 상세 조회 실패]", error);
     }
     throw new Error("작품을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return withSignedCover(supabase, mapProject(data as ProjectRow));
+  if (!data) {
+    throw new Error("작품 정보를 찾을 수 없어요.");
+  }
+
+  return withSignedCover(supabase, mapProject(data as unknown as ProjectRow));
 };
 
 /**
@@ -329,11 +348,16 @@ const fetchProjectDetail = async (projectId: string): Promise<Project> => {
 const createProject = async (values: ProjectFormValues): Promise<Project> => {
   const { supabase, userId } = await requireUserId();
 
-  const { data, error } = await supabase
-    .from("projects")
-    .insert(toProjectWritePayload(values, userId))
-    .select(PROJECT_SELECT)
-    .single();
+  const payload = toProjectWritePayload(values, userId);
+  const { data, error } = await writeWithGaugeFallback(
+    (nextPayload) =>
+      supabase
+        .from("projects")
+        .insert(nextPayload)
+        .select(PROJECT_SELECT_CORE)
+        .single(),
+    payload as Record<string, unknown>
+  );
 
   if (error || !data) {
     if (process.env.NODE_ENV === "development") {
@@ -342,7 +366,7 @@ const createProject = async (values: ProjectFormValues): Promise<Project> => {
     throw new Error("작품을 만들지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  const projectId = (data as ProjectRow).id;
+  const projectId = (data as unknown as ProjectRow).id;
 
   try {
     await replaceProjectYarns(supabase, projectId, userId, values.yarns);
@@ -373,11 +397,15 @@ const updateProject = async (
   const current = await fetchProjectDetail(projectId);
   const previousYarnIds = (current.yarns ?? []).map((yarn) => yarn.yarnId);
 
-  const { error } = await supabase
-    .from("projects")
-    .update(toProjectWritePayload(values, userId))
-    .eq("id", projectId)
-    .eq("user_id", userId);
+  const { error } = await writeWithGaugeFallback(
+    (payload) =>
+      supabase
+        .from("projects")
+        .update(payload)
+        .eq("id", projectId)
+        .eq("user_id", userId),
+    toProjectWritePayload(values, userId) as Record<string, unknown>
+  );
 
   if (error) {
     if (process.env.NODE_ENV === "development") {

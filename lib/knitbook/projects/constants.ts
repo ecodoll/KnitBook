@@ -3,9 +3,12 @@ import {
   YARN_IMAGE_FALLBACK_BUCKET,
 } from "@/lib/knitbook/yarns/constants";
 
+/** projects 목록·상세에 쓰는 기본 컬럼 (게이지 컬럼이 없는 DB와 호환) */
+export const PROJECT_SELECT_CORE =
+  "id, user_id, pattern_id, title, status, progress_percent, current_row, total_row, size, started_at, target_date, completed_at, cover_image_url, notes, created_at, updated_at";
+
 /** projects 목록·상세에 쓰는 컬럼 */
-export const PROJECT_SELECT =
-  "id, user_id, pattern_id, title, status, progress_percent, current_row, total_row, size, started_at, target_date, completed_at, cover_image_url, notes, gauge_stitches, gauge_rows, created_at, updated_at";
+export const PROJECT_SELECT = `${PROJECT_SELECT_CORE}, gauge_stitches, gauge_rows`;
 
 /** Quick Log 소요시간 선택(15분 간격, 최대 4시간) */
 export const WORK_LOG_DURATION_MINUTES = Array.from(
@@ -28,6 +31,15 @@ export const formatWorkDurationLabel = (minutes: number) => {
 
 /** 작품 상세에서 연결 실·도안명까지 함께 불러오는 쿼리 */
 export const PROJECT_DETAIL_SELECT = `${PROJECT_SELECT}, patterns(id, title), project_yarns(id, yarn_id, planned_quantity, used_quantity, yarns(id, brand, product_name, color_name, remaining_weight))`;
+
+/** 게이지 컬럼이 없을 때 쓰는 상세 쿼리 */
+export const PROJECT_DETAIL_SELECT_CORE = `${PROJECT_SELECT_CORE}, patterns(id, title), project_yarns(id, yarn_id, planned_quantity, used_quantity, yarns(id, brand, product_name, color_name, remaining_weight))`;
+
+/** 게이지 컬럼이 없을 때 쓰는 목록 쿼리 */
+export const PROJECT_LIST_SELECT_CORE = `${PROJECT_SELECT_CORE}, patterns(id, title)`;
+
+/** 목록에서 도안 제목까지 붙인 쿼리 */
+export const PROJECT_LIST_SELECT = `${PROJECT_SELECT}, patterns(id, title)`;
 
 /** 작품 대표 사진 Storage 버킷 이름 */
 export const PROJECT_IMAGE_BUCKET = "project-images";

@@ -3,8 +3,11 @@ import type { Project, WorkLog } from "@/components/knitbook/types";
 import { getAuthUser } from "@/lib/knitbook/app-user";
 import {
   PROJECT_DETAIL_SELECT,
-  PROJECT_SELECT,
+  PROJECT_DETAIL_SELECT_CORE,
+  PROJECT_LIST_SELECT,
+  PROJECT_LIST_SELECT_CORE,
 } from "@/lib/knitbook/projects/constants";
+import { selectWithGaugeFallback } from "@/lib/knitbook/projects/query";
 import {
   mapProject,
   mapWorkLog,
@@ -75,11 +78,15 @@ const getProjectsPageData = cache(async (): Promise<ProjectsPageData | null> => 
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select(`${PROJECT_SELECT}, patterns(id, title)`)
-    .eq("user_id", authUser.id)
-    .order("updated_at", { ascending: false });
+  const { data, error } = await selectWithGaugeFallback(
+    (columns) =>
+      supabase
+        .from("projects")
+        .select(columns)
+        .eq("user_id", authUser.id)
+        .order("updated_at", { ascending: false }),
+    { primary: PROJECT_LIST_SELECT, fallback: PROJECT_LIST_SELECT_CORE }
+  );
 
   if (error) {
     if (process.env.NODE_ENV === "development") {
@@ -88,7 +95,7 @@ const getProjectsPageData = cache(async (): Promise<ProjectsPageData | null> => 
     throw new Error("작품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  const rows = (data ?? []) as ProjectRow[];
+  const rows = (data ?? []) as unknown as ProjectRow[];
   const latestLogs = await loadLatestLogs(rows.map((row) => row.id));
 
   const projects = await attachSignedProjectCovers(
@@ -113,12 +120,16 @@ const getProjectDetailPageData = cache(async (
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("projects")
-    .select(PROJECT_DETAIL_SELECT)
-    .eq("id", projectId)
-    .eq("user_id", authUser.id)
-    .maybeSingle();
+  const { data, error } = await selectWithGaugeFallback(
+    (columns) =>
+      supabase
+        .from("projects")
+        .select(columns)
+        .eq("id", projectId)
+        .eq("user_id", authUser.id)
+        .maybeSingle(),
+    { primary: PROJECT_DETAIL_SELECT, fallback: PROJECT_DETAIL_SELECT_CORE }
+  );
 
   if (error) {
     if (process.env.NODE_ENV === "development") {
@@ -147,7 +158,7 @@ const getProjectDetailPageData = cache(async (
   const typedLogs = (logRows ?? []) as ProjectLogRow[];
 
   const [project] = await attachSignedProjectCovers(supabase, [
-    mapProject(data as ProjectRow, typedLogs[0] ?? null),
+    mapProject(data as unknown as ProjectRow, typedLogs[0] ?? null),
   ]);
 
   return {
