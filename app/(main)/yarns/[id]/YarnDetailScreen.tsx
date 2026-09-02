@@ -229,7 +229,7 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
           <CardTitle>연결된 작품</CardTitle>
           <CardDescription>이 실을 사용하는 작품이에요.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-3">
           {linkedProjects.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               아직 이 실을 쓰는 작품이 없어요.
@@ -248,6 +248,13 @@ const YarnDetailScreen = ({ initialYarn, linkedProjects }: YarnDetailScreenProps
               ))}
             </ul>
           )}
+          <Button
+            className="w-full"
+            nativeButton={false}
+            render={<Link href={`/projects/new?yarnId=${yarn.id}`} />}
+          >
+            작품에 사용
+          </Button>
         </CardContent>
       </Card>
 

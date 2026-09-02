@@ -44,15 +44,19 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
       getPatternsPageData(),
       getYarnsPageData(),
     ]);
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("로그인")) {
+      redirect("/login");
+    }
+    throw error;
+  }
+
+  if (!patternsData || !yarnsData) {
     redirect("/login");
   }
 
-  if (!detail || !patternsData || !yarnsData) {
-    if (!detail) {
-      notFound();
-    }
-    redirect("/login");
+  if (!detail) {
+    notFound();
   }
 
   return (

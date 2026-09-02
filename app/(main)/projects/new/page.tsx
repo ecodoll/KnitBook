@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 type NewProjectPageProps = {
-  searchParams: Promise<{ patternId?: string; title?: string }>;
+  searchParams: Promise<{ patternId?: string; title?: string; yarnId?: string }>;
 };
 
 /**
@@ -40,6 +40,7 @@ const NewProjectPage = async ({ searchParams }: NewProjectPageProps) => {
       yarns={yarnsData.yarns}
       defaultTitle={params.title}
       defaultPatternId={params.patternId}
+      defaultYarnId={params.yarnId}
     />
   );
 };

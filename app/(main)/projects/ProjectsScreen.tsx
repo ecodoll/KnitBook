@@ -151,7 +151,7 @@ const ProjectsScreen = ({ initialProjects }: ProjectsScreenProps) => {
               현재 단수와 진행률을 빠르게 남깁니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="p-5">
+          <div className="max-h-[80vh] overflow-y-auto p-5">
             {activeProject ? (
               <QuickLogForm
                 projectTitle={activeProject.title}

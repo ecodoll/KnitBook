@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
+import {
+  formatWorkDurationLabel,
+  WORK_LOG_DURATION_MINUTES,
+} from "@/lib/knitbook/projects/constants";
+import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 
 export type QuickLogValues = {
+  loggedOn: string;
   currentRow: number | null;
   progressPercent: number | null;
   durationMinutes: number | null;
   memo: string;
+  photo: File | null;
 };
 
 type QuickLogFormProps = {
@@ -25,7 +36,7 @@ type QuickLogFormProps = {
 };
 
 /**
- * 뜨개를 멈출 때 빠르게 단수·진행률·메모를 기록한다.
+ * 뜨개를 멈출 때 단수·시간·사진·메모를 기록한다.
  */
 const QuickLogForm = ({
   projectTitle,
@@ -35,13 +46,42 @@ const QuickLogForm = ({
   onCancel,
   isSubmitting = false,
 }: QuickLogFormProps) => {
+  const [loggedOn, setLoggedOn] = useState(
+    () => new Date().toISOString().slice(0, 10)
+  );
   const [currentRow, setCurrentRow] = useState(initialRow?.toString() ?? "");
   const [progressPercent, setProgressPercent] = useState(
     initialPercent?.toString() ?? ""
   );
   const [durationMinutes, setDurationMinutes] = useState("");
   const [memo, setMemo] = useState("");
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | undefined>();
+  const previewRef = useRef<string | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (previewRef.current) {
+        URL.revokeObjectURL(previewRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * 선택한 기록 사진 미리보기를 갱신한다.
+   */
+  const replacePhoto = (file: File | null) => {
+    if (previewRef.current) {
+      URL.revokeObjectURL(previewRef.current);
+      previewRef.current = undefined;
+    }
+
+    const nextUrl = file ? URL.createObjectURL(file) : undefined;
+    previewRef.current = nextUrl;
+    setPreviewUrl(nextUrl);
+    setPhoto(file);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -51,17 +91,30 @@ const QuickLogForm = ({
     const percentValue = progressPercent ? Number(progressPercent) : null;
     const durationValue = durationMinutes ? Number(durationMinutes) : null;
 
-    if (rowValue === null && percentValue === null && !memo.trim()) {
-      setErrorMessage("단수, 진행률, 메모 중 하나 이상 입력해 주세요.");
+    if (
+      rowValue === null &&
+      percentValue === null &&
+      durationValue === null &&
+      !memo.trim() &&
+      !photo
+    ) {
+      setErrorMessage("단수, 진행률, 시간, 메모, 사진 중 하나 이상 입력해 주세요.");
+      return;
+    }
+
+    if (!loggedOn) {
+      setErrorMessage("기록 날짜를 선택해 주세요.");
       return;
     }
 
     try {
       await onSubmit({
+        loggedOn,
         currentRow: Number.isFinite(rowValue) ? rowValue : null,
         progressPercent: Number.isFinite(percentValue) ? percentValue : null,
         durationMinutes: Number.isFinite(durationValue) ? durationValue : null,
         memo: memo.trim(),
+        photo,
       });
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
@@ -78,11 +131,22 @@ const QuickLogForm = ({
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       <div>
-        <p className="text-sm text-muted-foreground">빠른 기록</p>
+        <p className="text-sm text-muted-foreground">작업 기록</p>
         <h2 className="text-lg font-medium">{projectTitle}</h2>
       </div>
 
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
+
+      <div className="space-y-2">
+        <Label htmlFor="log-date">날짜</Label>
+        <Input
+          id="log-date"
+          type="date"
+          value={loggedOn}
+          onChange={(event) => setLoggedOn(event.target.value)}
+          disabled={isSubmitting}
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
@@ -115,17 +179,47 @@ const QuickLogForm = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="log-duration">오늘 작업 (분)</Label>
-        <Input
+        <Label htmlFor="log-duration">소요 시간</Label>
+        <NativeSelect
           id="log-duration"
-          type="number"
-          min={0}
-          inputMode="numeric"
+          className="w-full"
           value={durationMinutes}
           onChange={(event) => setDurationMinutes(event.target.value)}
-          placeholder="예: 30"
+          disabled={isSubmitting}
+        >
+          <NativeSelectOption value="">선택 안 함</NativeSelectOption>
+          {WORK_LOG_DURATION_MINUTES.map((minutes) => (
+            <NativeSelectOption key={minutes} value={String(minutes)}>
+              {formatWorkDurationLabel(minutes)}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="log-photo">사진</Label>
+        {previewUrl ? (
+          <div className="overflow-hidden rounded-lg bg-secondary">
+            {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기 URL 대응 */}
+            <img
+              src={previewUrl}
+              alt=""
+              className="aspect-square w-full object-cover"
+            />
+          </div>
+        ) : null}
+        <Input
+          id="log-photo"
+          type="file"
+          accept={YARN_IMAGE_ACCEPT}
+          onChange={(event) => {
+            replacePhoto(event.target.files?.[0] ?? null);
+          }}
           disabled={isSubmitting}
         />
+        <p className="text-xs text-muted-foreground">
+          JPEG, PNG, WebP 사진을 올릴 수 있어요. 휴대폰 사진은 자동으로 줄여 저장해요.
+        </p>
       </div>
 
       <div className="space-y-2">

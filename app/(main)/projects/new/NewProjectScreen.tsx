@@ -25,6 +25,7 @@ type NewProjectScreenProps = {
   yarns: Yarn[];
   defaultTitle?: string;
   defaultPatternId?: string;
+  defaultYarnId?: string;
 };
 
 /**
@@ -35,6 +36,7 @@ const NewProjectScreen = ({
   yarns,
   defaultTitle,
   defaultPatternId,
+  defaultYarnId,
 }: NewProjectScreenProps) => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +69,16 @@ const NewProjectScreen = ({
               title: defaultTitle ?? "",
               patternId: defaultPatternId ?? "",
               status: "in_progress",
+              yarns:
+                defaultYarnId && yarns.some((yarn) => yarn.id === defaultYarnId)
+                  ? [
+                      {
+                        yarnId: defaultYarnId,
+                        plannedQuantity: "",
+                        usedQuantity: "",
+                      },
+                    ]
+                  : [],
             }}
             isSubmitting={isSubmitting}
             submitLabel="작품 만들기"

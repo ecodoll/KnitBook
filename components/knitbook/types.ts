@@ -50,6 +50,8 @@ export type Project = {
   title: string;
   status: ProjectStatus;
   coverImageUrl?: string;
+  /** Storage에 저장된 대표 사진 경로. 클라이언트에서 서명해 표시한다. */
+  coverImageStoragePath?: string;
   progressPercent: number;
   currentRow?: number;
   totalRows?: number;
@@ -62,6 +64,10 @@ export type Project = {
   targetDate?: string;
   completedAt?: string;
   notes?: string;
+  /** 10cm 가로 코수 */
+  gaugeStitches?: number;
+  /** 10cm 세로 단수 */
+  gaugeRows?: number;
   yarns?: ProjectYarnLink[];
 };
 
@@ -87,6 +93,8 @@ export type WorkLog = {
   durationMinutes?: number;
   memo?: string;
   photoUrl?: string;
+  /** Storage에 저장된 기록 사진 경로 */
+  photoStoragePath?: string;
 };
 
 /** 실 재고 정보 */
