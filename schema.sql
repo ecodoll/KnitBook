@@ -198,9 +198,18 @@ create table if not exists public.projects (
   completed_at date,
   cover_image_url text,
   notes text,
+  gauge_stitches numeric(6, 2)
+    check (gauge_stitches is null or gauge_stitches >= 0),
+  gauge_rows numeric(6, 2)
+    check (gauge_rows is null or gauge_rows >= 0),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.projects
+  add column if not exists gauge_stitches numeric(6, 2);
+alter table public.projects
+  add column if not exists gauge_rows numeric(6, 2);
 
 create index if not exists projects_user_id_idx on public.projects (user_id);
 create index if not exists projects_user_id_status_idx on public.projects (user_id, status);
@@ -677,5 +686,71 @@ create policy "yarn_images_delete_own"
   to authenticated
   using (
     bucket_id = 'yarn-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+-- ---------------------------------------------------------------------------
+-- Storage: 작품 대표 사진 (사용자별 private bucket, 서명 URL로 조회)
+-- 앱은 project-images가 없으면 yarn-images / pattern-pdfs로 폴백한다.
+-- ---------------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (
+  'project-images',
+  'project-images',
+  false,
+  8388608,
+  array[
+    'image/jpeg',
+    'image/jpg',
+    'image/pjpeg',
+    'image/png',
+    'image/webp',
+    'image/heic',
+    'image/heif'
+  ]
+)
+on conflict (id) do update
+set
+  file_size_limit = excluded.file_size_limit,
+  allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists "project_images_insert_own" on storage.objects;
+drop policy if exists "project_images_select_own" on storage.objects;
+drop policy if exists "project_images_update_own" on storage.objects;
+drop policy if exists "project_images_delete_own" on storage.objects;
+
+create policy "project_images_insert_own"
+  on storage.objects for insert
+  to authenticated
+  with check (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_select_own"
+  on storage.objects for select
+  to authenticated
+  using (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_update_own"
+  on storage.objects for update
+  to authenticated
+  using (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  )
+  with check (
+    bucket_id = 'project-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "project_images_delete_own"
+  on storage.objects for delete
+  to authenticated
+  using (
+    bucket_id = 'project-images'
     and (storage.foldername(name))[1] = auth.uid()::text
   );

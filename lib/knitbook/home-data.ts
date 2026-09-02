@@ -11,6 +11,8 @@ import {
   mapPattern,
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
+import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
+import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
 import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
 import { createClient } from "@/lib/supabase/server";
@@ -91,11 +93,15 @@ const mapProject = (
   row: ProjectRow,
   latestLog?: ProjectLogRow | null
 ): Project => {
+  const coverRaw = row.cover_image_url;
+
   return {
     id: row.id,
     title: row.title,
     status: row.status,
-    coverImageUrl: row.cover_image_url ?? undefined,
+    coverImageUrl: isHttpUrl(coverRaw) ? coverRaw : undefined,
+    coverImageStoragePath:
+      coverRaw && !isHttpUrl(coverRaw) ? coverRaw : undefined,
     progressPercent: toNumber(row.progress_percent) ?? 0,
     currentRow: row.current_row ?? undefined,
     totalRows: row.total_row ?? undefined,
@@ -185,8 +191,11 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     }
   }
 
-  const projects = typedProjects.map((row) =>
-    mapProject(row, latestLogsByProject.get(row.id) ?? null)
+  const projects = await attachSignedProjectCovers(
+    supabase,
+    typedProjects.map((row) =>
+      mapProject(row, latestLogsByProject.get(row.id) ?? null)
+    )
   );
 
   // 표지 서명은 카드(PatternCover)에서 처리해 홈 전환을 막지 않는다.

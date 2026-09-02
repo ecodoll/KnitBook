@@ -42,8 +42,11 @@ const ProjectsListLoader = async () => {
   let data;
   try {
     data = await getProjectsPageData();
-  } catch {
-    redirect("/login");
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("로그인")) {
+      redirect("/login");
+    }
+    throw error;
   }
 
   if (!data) {
