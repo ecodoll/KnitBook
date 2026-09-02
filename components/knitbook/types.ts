@@ -64,6 +64,10 @@ export type Project = {
   targetDate?: string;
   completedAt?: string;
   notes?: string;
+  /** 10cm 가로 코수 */
+  gaugeStitches?: number;
+  /** 10cm 세로 단수 */
+  gaugeRows?: number;
   yarns?: ProjectYarnLink[];
 };
 
@@ -89,6 +93,8 @@ export type WorkLog = {
   durationMinutes?: number;
   memo?: string;
   photoUrl?: string;
+  /** Storage에 저장된 기록 사진 경로 */
+  photoStoragePath?: string;
 };
 
 /** 실 재고 정보 */

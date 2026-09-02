@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
@@ -31,7 +31,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Plus, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 
 type HomeDashboardProps = {
   nickname: string;
@@ -41,7 +41,7 @@ type HomeDashboardProps = {
 };
 
 /**
- * PRD 홈 대시보드(인사·작품·빠른 기록·도안·실·AI 안내)를 조립한다.
+ * 홈 대시보드(인사·작품·도안·실·AI 안내)를 조립한다.
  */
 const HomeDashboard = ({
   nickname,
@@ -55,14 +55,8 @@ const HomeDashboard = ({
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isSavingLog, setIsSavingLog] = useState(false);
 
-  const hasProjects = useMemo(() => projects.length > 0, [projects.length]);
-
-  const openQuickLog = (projectId?: string) => {
-    const target =
-      projects.find((project) => project.id === projectId) ??
-      projects[0] ??
-      null;
-
+  const openQuickLog = (projectId: string) => {
+    const target = projects.find((project) => project.id === projectId) ?? null;
     if (!target) {
       return;
     }
@@ -89,7 +83,7 @@ const HomeDashboard = ({
       router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {
-        console.error("[빠른 기록 저장 실패]", error);
+        console.error("[작업 기록 저장 실패]", error);
       }
       throw new Error(
         error instanceof Error
@@ -109,27 +103,6 @@ const HomeDashboard = ({
         projects={projects}
         onQuickLog={(projectId) => openQuickLog(projectId)}
       />
-
-      <section className="space-y-3" aria-labelledby="quick-log-heading">
-        <h2 id="quick-log-heading" className="text-base font-medium">
-          빠른 기록
-        </h2>
-        <Button
-          type="button"
-          variant="secondary"
-          className="h-12 w-full justify-start gap-2"
-          onClick={() => openQuickLog()}
-          disabled={!hasProjects}
-        >
-          <Plus className="size-4" aria-hidden />
-          작업 기록
-        </Button>
-        {!hasProjects ? (
-          <p className="text-xs text-muted-foreground">
-            진행 중인 작품이 있으면 바로 단수를 남길 수 있어요.
-          </p>
-        ) : null}
-      </section>
 
       <RecentPatternsSection patterns={initialPatterns} />
 
@@ -182,7 +155,7 @@ const HomeDashboard = ({
               현재 단수와 진행률을 빠르게 남깁니다.
             </DialogDescription>
           </DialogHeader>
-          <div className="p-5">
+          <div className="max-h-[80vh] overflow-y-auto p-5">
             {activeProject ? (
               <QuickLogForm
                 projectTitle={activeProject.title}

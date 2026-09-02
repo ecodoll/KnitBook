@@ -5,6 +5,7 @@ import type { QuickLogValues } from "@/components/knitbook/projects/QuickLogForm
 import type { ProjectFormValues } from "@/components/knitbook/projects/ProjectForm";
 import {
   buildProjectCoverPath,
+  buildProjectLogPhotoPath,
   PROJECT_DETAIL_SELECT,
   PROJECT_IMAGE_BUCKETS,
   PROJECT_SELECT,
@@ -15,7 +16,10 @@ import {
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
-import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
+import {
+  attachSignedProjectCovers,
+  attachSignedWorkLogPhotos,
+} from "@/lib/knitbook/projects/signed-url";
 import { mapYarnImageUploadError } from "@/lib/knitbook/yarns/constants";
 import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
 import { createClient } from "@/lib/supabase/client";
@@ -171,6 +175,8 @@ const toProjectWritePayload = (values: ProjectFormValues, userId: string) => {
         ? emptyToNull(values.completedAt) ?? new Date().toISOString().slice(0, 10)
         : null,
     notes: emptyToNull(values.notes),
+    gauge_stitches: parseOptionalNumber(values.gaugeStitches, "게이지 코수"),
+    gauge_rows: parseOptionalNumber(values.gaugeRows, "게이지 단수"),
   };
 };
 
@@ -499,6 +505,47 @@ const saveWorkLog = async (
     throw new Error("작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
+  let typedLog = logRow as ProjectLogRow;
+
+  if (values.photo) {
+    try {
+      const prepared = await prepareYarnImageFile(values.photo);
+      const storagePath = buildProjectLogPhotoPath(
+        userId,
+        projectId,
+        typedLog.id,
+        prepared.extension
+      );
+      await uploadProjectCoverToAvailableBucket(
+        supabase,
+        storagePath,
+        prepared.body,
+        prepared.contentType
+      );
+
+      const { data: updatedLog, error: photoError } = await supabase
+        .from("project_logs")
+        .update({ photo_url: storagePath })
+        .eq("id", typedLog.id)
+        .select("id, project_id, logged_on, row_count, progress_percent, work_minutes, photo_url, memo, created_at")
+        .single();
+
+      if (photoError || !updatedLog) {
+        throw photoError ?? new Error("작업 사진을 저장하지 못했어요.");
+      }
+
+      typedLog = updatedLog as ProjectLogRow;
+    } catch (photoError) {
+      await supabase.from("project_logs").delete().eq("id", typedLog.id);
+      if (process.env.NODE_ENV === "development") {
+        console.error("[작업 기록 사진 업로드 실패]", photoError);
+      }
+      throw photoError instanceof Error
+        ? photoError
+        : new Error("작업 사진을 올리지 못했어요. 잠시 후 다시 시도해 주세요.");
+    }
+  }
+
   const projectPatch: {
     current_row?: number | null;
     progress_percent?: number | null;
@@ -527,7 +574,9 @@ const saveWorkLog = async (
   }
 
   const project = await fetchProjectDetail(projectId);
-  const typedLog = logRow as ProjectLogRow;
+  const [signedLog] = await attachSignedWorkLogPhotos(supabase, [
+    mapWorkLog(typedLog),
+  ]);
   return {
     project: {
       ...project,
@@ -536,7 +585,7 @@ const saveWorkLog = async (
       lastNote: values.memo.trim() || project.lastNote,
       lastWorkedAt: typedLog.created_at,
     },
-    log: mapWorkLog(typedLog),
+    log: signedLog,
   };
 };
 

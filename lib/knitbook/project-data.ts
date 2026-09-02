@@ -11,7 +11,10 @@ import {
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
-import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
+import {
+  attachSignedProjectCovers,
+  attachSignedWorkLogPhotos,
+} from "@/lib/knitbook/projects/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProjectsPageData = {
@@ -149,7 +152,7 @@ const getProjectDetailPageData = cache(async (
 
   return {
     project,
-    logs: typedLogs.map(mapWorkLog),
+    logs: await attachSignedWorkLogPhotos(supabase, typedLogs.map(mapWorkLog)),
   };
 });
 

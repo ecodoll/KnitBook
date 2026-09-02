@@ -1,5 +1,6 @@
 import type { WorkLog } from "@/components/knitbook/types";
 import EmptyState from "@/components/knitbook/shared/EmptyState";
+import { formatWorkDurationLabel } from "@/lib/knitbook/projects/constants";
 
 type ProjectLogListProps = {
   logs: WorkLog[];
@@ -39,12 +40,22 @@ const ProjectLogList = ({ logs }: ProjectLogListProps) => {
                   ? `${log.progressPercent}%`
                   : null,
                 typeof log.durationMinutes === "number"
-                  ? `${log.durationMinutes}분`
+                  ? formatWorkDurationLabel(log.durationMinutes)
                   : null,
               ]
                 .filter(Boolean)
                 .join(" · ") || "진행 기록"}
             </p>
+            {log.photoUrl ? (
+              <div className="mt-2 overflow-hidden rounded-md bg-secondary">
+                {/* eslint-disable-next-line @next/next/no-img-element -- 스토리지 서명 URL 대응 */}
+                <img
+                  src={log.photoUrl}
+                  alt=""
+                  className="aspect-square w-full object-cover"
+                />
+              </div>
+            ) : null}
             {log.memo ? (
               <p className="mt-1 whitespace-pre-wrap">{log.memo}</p>
             ) : null}

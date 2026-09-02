@@ -139,8 +139,30 @@ const attachSignedProjectCovers = async <T extends {
   }));
 };
 
+/**
+ * 작업 기록 사진에 서명 URL을 붙인다.
+ */
+const attachSignedWorkLogPhotos = async <T extends {
+  photoUrl?: string;
+  photoStoragePath?: string;
+}>(
+  supabase: StorageSigner,
+  logs: T[]
+): Promise<T[]> => {
+  const signedUrls = await createSignedProjectCoverUrls(
+    supabase,
+    logs.map((log) => log.photoStoragePath ?? log.photoUrl)
+  );
+
+  return logs.map((log, index) => ({
+    ...log,
+    photoUrl: signedUrls[index] ?? log.photoUrl,
+  }));
+};
+
 export {
   attachSignedProjectCovers,
+  attachSignedWorkLogPhotos,
   createSignedProjectCoverUrl,
   createSignedProjectCoverUrls,
 };

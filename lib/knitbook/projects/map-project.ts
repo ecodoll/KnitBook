@@ -21,6 +21,8 @@ export type ProjectRow = {
   completed_at?: string | null;
   cover_image_url?: string | null;
   notes?: string | null;
+  gauge_stitches?: number | string | null;
+  gauge_rows?: number | string | null;
   created_at?: string;
   updated_at?: string;
   patterns?: { id?: string; title?: string | null } | null;
@@ -98,6 +100,8 @@ const mapProject = (
     targetDate: row.target_date ?? undefined,
     completedAt: row.completed_at ?? undefined,
     notes: row.notes ?? undefined,
+    gaugeStitches: toNumber(row.gauge_stitches),
+    gaugeRows: toNumber(row.gauge_rows),
     yarns: (row.project_yarns ?? []).map(mapProjectYarn),
   };
 };
@@ -106,6 +110,8 @@ const mapProject = (
  * DB 작업 기록 행을 UI WorkLog 타입으로 변환한다.
  */
 const mapWorkLog = (row: ProjectLogRow): WorkLog => {
+  const photoRaw = row.photo_url;
+
   return {
     id: row.id,
     projectId: row.project_id,
@@ -114,7 +120,8 @@ const mapWorkLog = (row: ProjectLogRow): WorkLog => {
     progressPercent: toNumber(row.progress_percent),
     durationMinutes: row.work_minutes ?? undefined,
     memo: row.memo ?? undefined,
-    photoUrl: row.photo_url ?? undefined,
+    photoUrl: isHttpUrl(photoRaw) ? photoRaw : undefined,
+    photoStoragePath: photoRaw && !isHttpUrl(photoRaw) ? photoRaw : undefined,
   };
 };
 

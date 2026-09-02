@@ -5,7 +5,26 @@ import {
 
 /** projects 목록·상세에 쓰는 컬럼 */
 export const PROJECT_SELECT =
-  "id, user_id, pattern_id, title, status, progress_percent, current_row, total_row, size, started_at, target_date, completed_at, cover_image_url, notes, created_at, updated_at";
+  "id, user_id, pattern_id, title, status, progress_percent, current_row, total_row, size, started_at, target_date, completed_at, cover_image_url, notes, gauge_stitches, gauge_rows, created_at, updated_at";
+
+/** Quick Log 소요시간 선택(15분 간격, 최대 4시간) */
+export const WORK_LOG_DURATION_MINUTES = Array.from(
+  { length: 16 },
+  (_, index) => (index + 1) * 15
+);
+
+/**
+ * 작업 시간(분)을 드롭다운 라벨로 만든다.
+ */
+export const formatWorkDurationLabel = (minutes: number) => {
+  if (minutes < 60) {
+    return `${minutes}분`;
+  }
+
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return rest === 0 ? `${hours}시간` : `${hours}시간 ${rest}분`;
+};
 
 /** 작품 상세에서 연결 실·도안명까지 함께 불러오는 쿼리 */
 export const PROJECT_DETAIL_SELECT = `${PROJECT_SELECT}, patterns(id, title), project_yarns(id, yarn_id, planned_quantity, used_quantity, yarns(id, brand, product_name, color_name, remaining_weight))`;
@@ -32,4 +51,16 @@ export const buildProjectCoverPath = (
   extension: string
 ) => {
   return `${userId}/projects/${projectId}.${extension}`;
+};
+
+/**
+ * 작업 기록 사진 Storage 경로를 만든다.
+ */
+export const buildProjectLogPhotoPath = (
+  userId: string,
+  projectId: string,
+  logId: string,
+  extension: string
+) => {
+  return `${userId}/projects/${projectId}/logs/${logId}.${extension}`;
 };

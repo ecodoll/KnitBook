@@ -29,6 +29,8 @@ export type ProjectFormValues = {
   currentRow: string;
   totalRows: string;
   progressPercent: string;
+  gaugeStitches: string;
+  gaugeRows: string;
   yarns: ProjectYarnSelection[];
   photo: File | null;
 };
@@ -62,6 +64,8 @@ const EMPTY_VALUES: ProjectFormValues = {
   currentRow: "",
   totalRows: "",
   progressPercent: "0",
+  gaugeStitches: "",
+  gaugeRows: "",
   yarns: [],
   photo: null,
 };
@@ -82,6 +86,8 @@ const projectToFormValues = (project: Project): ProjectFormValues => {
     currentRow: project.currentRow?.toString() ?? "",
     totalRows: project.totalRows?.toString() ?? "",
     progressPercent: project.progressPercent.toString(),
+    gaugeStitches: project.gaugeStitches?.toString() ?? "",
+    gaugeRows: project.gaugeRows?.toString() ?? "",
     yarns: (project.yarns ?? []).map((yarn) => ({
       yarnId: yarn.yarnId,
       plannedQuantity: yarn.plannedQuantity?.toString() ?? "",
@@ -242,6 +248,45 @@ const ProjectForm = ({
             disabled={isSubmitting}
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-sm font-medium">게이지 (10cm)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="project-gauge-stitches">가로 코수</Label>
+            <Input
+              id="project-gauge-stitches"
+              type="number"
+              min={0}
+              step="0.5"
+              inputMode="decimal"
+              value={values.gaugeStitches}
+              onChange={(event) =>
+                updateField("gaugeStitches", event.target.value)
+              }
+              placeholder="예: 22"
+              disabled={isSubmitting}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="project-gauge-rows">세로 단수</Label>
+            <Input
+              id="project-gauge-rows"
+              type="number"
+              min={0}
+              step="0.5"
+              inputMode="decimal"
+              value={values.gaugeRows}
+              onChange={(event) => updateField("gaugeRows", event.target.value)}
+              placeholder="예: 30"
+              disabled={isSubmitting}
+            />
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          10cm 안에 들어가는 코수와 단수를 적어 주세요.
+        </p>
       </div>
 
       <div className="space-y-2">

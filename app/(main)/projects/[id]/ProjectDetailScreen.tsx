@@ -235,6 +235,21 @@ const ProjectDetailScreen = ({
           {project.size ? (
             <CardDescription>사이즈 {project.size}</CardDescription>
           ) : null}
+          {project.gaugeStitches || project.gaugeRows ? (
+            <CardDescription>
+              게이지 10cm{" "}
+              {[
+                typeof project.gaugeStitches === "number"
+                  ? `${project.gaugeStitches}코`
+                  : null,
+                typeof project.gaugeRows === "number"
+                  ? `${project.gaugeRows}단`
+                  : null,
+              ]
+                .filter(Boolean)
+                .join(" × ")}
+            </CardDescription>
+          ) : null}
           {project.startedAt || project.targetDate ? (
             <CardDescription>
               {[

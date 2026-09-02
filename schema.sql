@@ -198,9 +198,18 @@ create table if not exists public.projects (
   completed_at date,
   cover_image_url text,
   notes text,
+  gauge_stitches numeric(6, 2)
+    check (gauge_stitches is null or gauge_stitches >= 0),
+  gauge_rows numeric(6, 2)
+    check (gauge_rows is null or gauge_rows >= 0),
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
+
+alter table public.projects
+  add column if not exists gauge_stitches numeric(6, 2);
+alter table public.projects
+  add column if not exists gauge_rows numeric(6, 2);
 
 create index if not exists projects_user_id_idx on public.projects (user_id);
 create index if not exists projects_user_id_status_idx on public.projects (user_id, status);
