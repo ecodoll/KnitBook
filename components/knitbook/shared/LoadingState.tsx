@@ -7,7 +7,7 @@ type LoadingStateProps = {
   rows?: number;
   className?: string;
   /** 카드형 스켈레톤 여부 */
-  variant?: "list" | "cards" | "detail" | "spinner";
+  variant?: "list" | "cards" | "detail" | "spinner" | "tiles" | "strip";
 };
 
 /**
@@ -20,6 +20,46 @@ const LoadingState = ({
 }: LoadingStateProps) => {
   if (variant === "spinner") {
     return <PageLoading className={cn("min-h-[12rem] py-8", className)} />;
+  }
+
+  if (variant === "tiles") {
+    return (
+      <div
+        className={cn("grid grid-cols-3 gap-2.5", className)}
+        role="status"
+        aria-label="불러오는 중"
+      >
+        {Array.from({ length: rows }).map((_, index) => (
+          <div key={index} className="space-y-1.5">
+            <Skeleton className="aspect-square w-full rounded-xl" />
+            <Skeleton className="h-1.5 w-full rounded-full" />
+            <Skeleton className="mx-auto h-3 w-3/4" />
+          </div>
+        ))}
+        <span className="sr-only">불러오는 중이에요…</span>
+      </div>
+    );
+  }
+
+  if (variant === "strip") {
+    return (
+      <div
+        className={cn("grid grid-cols-4 gap-2 min-[390px]:grid-cols-5", className)}
+        role="status"
+        aria-label="불러오는 중"
+      >
+        {Array.from({ length: rows }).map((_, index) => (
+          <div
+            key={index}
+            className={cn("space-y-1", index === 4 && "hidden min-[390px]:block")}
+          >
+            <Skeleton className="aspect-square w-full rounded-lg" />
+            <Skeleton className="mx-auto h-3 w-3/4" />
+          </div>
+        ))}
+        <span className="sr-only">불러오는 중이에요…</span>
+      </div>
+    );
   }
 
   if (variant === "cards") {

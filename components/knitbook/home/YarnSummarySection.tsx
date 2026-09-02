@@ -1,10 +1,13 @@
 import Link from "next/link";
 import type { YarnInventorySummary } from "@/components/knitbook/types";
-import EmptyState from "@/components/knitbook/shared/EmptyState";
+import HomeSectionEmpty from "@/components/knitbook/home/HomeSectionEmpty";
+import HomeSectionHeader from "@/components/knitbook/home/HomeSectionHeader";
+import { HOME_YARN_THUMB_LIMIT } from "@/components/knitbook/home/constants";
+import YarnPhoto from "@/components/knitbook/yarns/YarnPhoto";
 import LoadingState from "@/components/knitbook/shared/LoadingState";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Scissors } from "lucide-react";
 
 type YarnSummarySectionProps = {
   summary: YarnInventorySummary | null;
@@ -14,7 +17,7 @@ type YarnSummarySectionProps = {
 };
 
 /**
- * 홈의 실 재고 요약 카드를 렌더링한다.
+ * 홈의 실 재고를 아이콘 스트립과 한 줄 요약으로 보여준다.
  */
 const YarnSummarySection = ({
   summary,
@@ -22,21 +25,20 @@ const YarnSummarySection = ({
   errorMessage,
   onRetry,
 }: YarnSummarySectionProps) => {
+  const thumbs = summary?.recentYarns.slice(0, HOME_YARN_THUMB_LIMIT) ?? [];
+
   return (
-    <section className="space-y-3" aria-labelledby="yarn-summary-heading">
-      <div className="flex items-center justify-between gap-2">
-        <h2 id="yarn-summary-heading" className="text-base font-medium">
-          내 실
-        </h2>
+    <section className="space-y-2" aria-labelledby="yarn-summary-heading">
+      <HomeSectionHeader id="yarn-summary-heading" title="내 실" icon={Scissors}>
         <Button
           variant="ghost"
-          size="sm"
+          size="xs"
           nativeButton={false}
           render={<Link href="/yarns" />}
         >
-          재고 보기
+          전체
         </Button>
-      </div>
+      </HomeSectionHeader>
 
       {isLoading ? <LoadingState rows={1} /> : null}
 
@@ -45,42 +47,45 @@ const YarnSummarySection = ({
       ) : null}
 
       {!isLoading && !errorMessage && (!summary || summary.totalKinds === 0) ? (
-        <EmptyState
-          title="등록된 실이 없어요"
-          description="보유한 실을 등록하면 작품과 연결할 수 있어요."
-          actionLabel="실 등록하기"
+        <HomeSectionEmpty
+          message="등록된 실이 없어요"
+          actionLabel="등록"
           actionHref="/yarns/new"
         />
       ) : null}
 
       {!isLoading && !errorMessage && summary && summary.totalKinds > 0 ? (
-        <Card size="sm">
-          <CardHeader>
-            <CardTitle>현재 {summary.totalKinds}종</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            {typeof summary.totalRemainingGrams === "number" ? (
-              <p>남은 양 합계 {summary.totalRemainingGrams}g</p>
-            ) : null}
+        <Link
+          href="/yarns"
+          className="flex items-center gap-3 rounded-xl bg-card px-3 py-2.5 ring-1 ring-foreground/10 outline-none transition-shadow hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50"
+        >
+          {thumbs.length > 0 ? (
+            <div className="flex shrink-0 -space-x-2" aria-hidden>
+              {thumbs.map((yarn) => (
+                <YarnPhoto
+                  key={yarn.id}
+                  yarn={yarn}
+                  className="size-9 rounded-full ring-2 ring-card"
+                />
+              ))}
+            </div>
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">
+              {summary.totalKinds}종
+              {typeof summary.totalRemainingGrams === "number"
+                ? ` · ${summary.totalRemainingGrams}g`
+                : ""}
+            </p>
             {summary.lowStockCount > 0 ? (
-              <p className="text-brand-warning">
+              <p className="text-xs text-brand-warning">
                 부족·소진 예정 {summary.lowStockCount}종
               </p>
             ) : (
-              <p>재고 상태가 양호해요</p>
+              <p className="text-xs text-muted-foreground">재고 상태가 양호해요</p>
             )}
-            {summary.recentYarns.length > 0 ? (
-              <ul className="mt-2 space-y-1 text-foreground">
-                {summary.recentYarns.slice(0, 3).map((yarn) => (
-                  <li key={yarn.id} className="truncate">
-                    {yarn.brand} · {yarn.productName}
-                    {yarn.colorName ? ` / ${yarn.colorName}` : ""}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </CardContent>
-        </Card>
+          </div>
+        </Link>
       ) : null}
     </section>
   );

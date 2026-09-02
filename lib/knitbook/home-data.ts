@@ -13,8 +13,14 @@ import {
 } from "@/lib/knitbook/patterns/map-pattern";
 import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
 import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
+import {
+  HOME_PATTERN_VISIBLE_LIMIT,
+  HOME_PROJECT_VISIBLE_LIMIT,
+  HOME_YARN_THUMB_LIMIT,
+} from "@/components/knitbook/home/constants";
 import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
+import { createSignedYarnImageUrls } from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -44,7 +50,7 @@ export type HomeDashboardData = {
   yarnSummary: YarnInventorySummary;
 };
 
-const RECENT_YARN_LIMIT = 3;
+const RECENT_YARN_LIMIT = HOME_YARN_THUMB_LIMIT;
 
 type SupabaseLikeError = {
   code?: string;
@@ -137,7 +143,8 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       )
       .eq("user_id", user.id)
       .eq("status", "in_progress")
-      .order("updated_at", { ascending: false }),
+      .order("updated_at", { ascending: false })
+      .limit(HOME_PROJECT_VISIBLE_LIMIT + 1),
     supabase
       .from("patterns")
       .select(
@@ -146,7 +153,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       .eq("user_id", user.id)
       .order("last_opened_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(HOME_PATTERN_VISIBLE_LIMIT),
     supabase
       .from("yarns")
       .select(YARN_SELECT)
@@ -203,6 +210,15 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     mapPattern(row)
   );
   const yarns = ((yarnRows ?? []) as YarnRow[]).map((row) => mapYarn(row));
+  const recentYarnsRaw = yarns.slice(0, RECENT_YARN_LIMIT);
+  const recentYarnSignedUrls = await createSignedYarnImageUrls(
+    supabase,
+    recentYarnsRaw.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
+  );
+  const recentYarns = recentYarnsRaw.map((yarn, index) => ({
+    ...yarn,
+    imageUrl: recentYarnSignedUrls[index] ?? yarn.imageUrl,
+  }));
 
   const totalRemainingGrams = yarns.reduce((sum, yarn) => {
     return sum + (yarn.remainingGrams ?? 0);
@@ -219,7 +235,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     totalKinds: yarns.length,
     totalRemainingGrams: yarns.length > 0 ? totalRemainingGrams : undefined,
     lowStockCount,
-    recentYarns: yarns.slice(0, RECENT_YARN_LIMIT),
+    recentYarns,
   };
 
   return {

@@ -16,6 +16,7 @@ export { default as ErrorState } from "@/components/knitbook/shared/ErrorState";
 export { default as SearchBar } from "@/components/knitbook/shared/SearchBar";
 
 export { default as HomeGreeting } from "@/components/knitbook/home/HomeGreeting";
+export { default as HomeAiTeaser } from "@/components/knitbook/home/HomeAiTeaser";
 export { default as InProgressSection } from "@/components/knitbook/home/InProgressSection";
 export { default as RecentPatternsSection } from "@/components/knitbook/home/RecentPatternsSection";
 export { default as YarnSummarySection } from "@/components/knitbook/home/YarnSummarySection";
