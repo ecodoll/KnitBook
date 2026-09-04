@@ -15,8 +15,8 @@ import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
 import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
 import {
   HOME_PATTERN_VISIBLE_LIMIT,
-  HOME_PROJECT_VISIBLE_LIMIT,
   HOME_YARN_THUMB_LIMIT,
+  sortProjectsByLatestWork,
 } from "@/components/knitbook/home/constants";
 import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
@@ -143,8 +143,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       )
       .eq("user_id", user.id)
       .eq("status", "in_progress")
-      .order("updated_at", { ascending: false })
-      .limit(HOME_PROJECT_VISIBLE_LIMIT + 1),
+      .order("updated_at", { ascending: false }),
     supabase
       .from("patterns")
       .select(
@@ -198,10 +197,12 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     }
   }
 
-  const projects = await attachSignedProjectCovers(
-    supabase,
-    typedProjects.map((row) =>
-      mapProject(row, latestLogsByProject.get(row.id) ?? null)
+  const projects = sortProjectsByLatestWork(
+    await attachSignedProjectCovers(
+      supabase,
+      typedProjects.map((row) =>
+        mapProject(row, latestLogsByProject.get(row.id) ?? null)
+      )
     )
   );
 
