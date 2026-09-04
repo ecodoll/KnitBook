@@ -35,6 +35,7 @@ export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCa
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";
 export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";
 export { default as ProjectStatusBadge } from "@/components/knitbook/projects/ProjectStatusBadge";
+export { default as ProjectStatusSelect } from "@/components/knitbook/projects/ProjectStatusSelect";
 export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLogForm";
 export { default as ProjectForm } from "@/components/knitbook/projects/ProjectForm";
 export { default as ProjectYarnPicker } from "@/components/knitbook/projects/ProjectYarnPicker";

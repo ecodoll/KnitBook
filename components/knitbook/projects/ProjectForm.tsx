@@ -5,6 +5,7 @@ import type { Pattern, Project, ProjectStatus, Yarn } from "@/components/knitboo
 import ProjectYarnPicker, {
   type ProjectYarnSelection,
 } from "@/components/knitbook/projects/ProjectYarnPicker";
+import { PROJECT_STATUS_OPTIONS } from "@/components/knitbook/projects/status";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 import { Button } from "@/components/ui/button";
@@ -44,13 +45,6 @@ type ProjectFormProps = {
   isSubmitting?: boolean;
   submitLabel?: string;
 };
-
-const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
-  { value: "planned", label: "계획" },
-  { value: "in_progress", label: "진행 중" },
-  { value: "paused", label: "일시정지" },
-  { value: "completed", label: "완료" },
-];
 
 const EMPTY_VALUES: ProjectFormValues = {
   title: "",
@@ -219,35 +213,23 @@ const ProjectForm = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="project-status">상태</Label>
-          <NativeSelect
-            id="project-status"
-            className="w-full"
-            value={values.status}
-            onChange={(event) =>
-              updateField("status", event.target.value as ProjectStatus)
-            }
-            disabled={isSubmitting}
-          >
-            {STATUS_OPTIONS.map((option) => (
-              <NativeSelectOption key={option.value} value={option.value}>
-                {option.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="project-size">사이즈</Label>
-          <Input
-            id="project-size"
-            value={values.size}
-            onChange={(event) => updateField("size", event.target.value)}
-            placeholder="예: M"
-            disabled={isSubmitting}
-          />
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="project-status">상태</Label>
+        <NativeSelect
+          id="project-status"
+          className="w-full"
+          value={values.status}
+          onChange={(event) =>
+            updateField("status", event.target.value as ProjectStatus)
+          }
+          disabled={isSubmitting}
+        >
+          {PROJECT_STATUS_OPTIONS.map((option) => (
+            <NativeSelectOption key={option.value} value={option.value}>
+              {option.label}
+            </NativeSelectOption>
+          ))}
+        </NativeSelect>
       </div>
 
       <div className="space-y-2">

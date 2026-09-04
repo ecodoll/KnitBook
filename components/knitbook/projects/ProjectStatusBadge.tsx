@@ -1,12 +1,10 @@
 import type { ProjectStatus } from "@/components/knitbook/types";
+import {
+  PROJECT_STATUS_LABEL,
+  getProjectStatusToneClass,
+} from "@/components/knitbook/projects/status";
 import { Badge } from "@/components/ui/badge";
-
-const STATUS_LABEL: Record<ProjectStatus, string> = {
-  planned: "계획",
-  in_progress: "진행 중",
-  paused: "일시정지",
-  completed: "완료",
-};
+import { cn } from "@/lib/utils";
 
 type ProjectStatusBadgeProps = {
   status: ProjectStatus;
@@ -17,26 +15,21 @@ type ProjectStatusBadgeProps = {
  */
 const ProjectStatusBadge = ({ status }: ProjectStatusBadgeProps) => {
   const variant =
-    status === "completed"
-      ? "default"
-      : status === "paused"
-        ? "outline"
-        : status === "planned"
-          ? "secondary"
-          : "default";
+    status === "paused"
+      ? "outline"
+      : status === "planned"
+        ? "secondary"
+        : "default";
 
   return (
     <Badge
       variant={variant}
-      className={
-        status === "in_progress"
-          ? "bg-primary text-primary-foreground"
-          : status === "completed"
-            ? "bg-brand-success text-primary-foreground"
-            : undefined
-      }
+      className={cn(
+        status === "paused" ? undefined : "border-transparent",
+        getProjectStatusToneClass(status)
+      )}
     >
-      {STATUS_LABEL[status]}
+      {PROJECT_STATUS_LABEL[status]}
     </Badge>
   );
 };
