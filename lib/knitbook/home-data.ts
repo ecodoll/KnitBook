@@ -12,7 +12,6 @@ import {
   type PatternRow,
 } from "@/lib/knitbook/patterns/map-pattern";
 import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
-import { attachSignedProjectCovers } from "@/lib/knitbook/projects/signed-url";
 import {
   HOME_PATTERN_VISIBLE_LIMIT,
   HOME_YARN_THUMB_LIMIT,
@@ -20,7 +19,6 @@ import {
 } from "@/components/knitbook/home/constants";
 import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
-import { createSignedYarnImageUrls } from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectRow = {
@@ -198,28 +196,17 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
   }
 
   const projects = sortProjectsByLatestWork(
-    await attachSignedProjectCovers(
-      supabase,
-      typedProjects.map((row) =>
-        mapProject(row, latestLogsByProject.get(row.id) ?? null)
-      )
+    typedProjects.map((row) =>
+      mapProject(row, latestLogsByProject.get(row.id) ?? null)
     )
   );
 
-  // 표지 서명은 카드(PatternCover)에서 처리해 홈 전환을 막지 않는다.
+  // 표지·실 사진 서명은 카드에서 처리해 홈 전환을 막지 않는다.
   const patterns = ((patternRows ?? []) as PatternRow[]).map((row) =>
     mapPattern(row)
   );
   const yarns = ((yarnRows ?? []) as YarnRow[]).map((row) => mapYarn(row));
-  const recentYarnsRaw = yarns.slice(0, RECENT_YARN_LIMIT);
-  const recentYarnSignedUrls = await createSignedYarnImageUrls(
-    supabase,
-    recentYarnsRaw.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
-  );
-  const recentYarns = recentYarnsRaw.map((yarn, index) => ({
-    ...yarn,
-    imageUrl: recentYarnSignedUrls[index] ?? yarn.imageUrl,
-  }));
+  const recentYarns = yarns.slice(0, RECENT_YARN_LIMIT);
 
   const totalRemainingGrams = yarns.reduce((sum, yarn) => {
     return sum + (yarn.remainingGrams ?? 0);

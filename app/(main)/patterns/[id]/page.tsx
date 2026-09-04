@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import PatternDetailScreen from "@/app/(main)/patterns/[id]/PatternDetailScreen";
+import LoadingState from "@/components/knitbook/shared/LoadingState";
 import { getPatternDetailPageData } from "@/lib/knitbook/pattern-data";
 
 type PatternDetailPageProps = PageProps<"/patterns/[id]">;
@@ -26,11 +28,9 @@ export const generateMetadata = async ({
 };
 
 /**
- * 도안 상세(뷰어) 페이지이다.
+ * 도안 상세 본문을 불러와 렌더한다.
  */
-const PatternDetailPage = async ({ params }: PatternDetailPageProps) => {
-  const { id } = await params;
-
+const PatternDetailLoader = async ({ id }: { id: string }) => {
   let data;
   try {
     data = await getPatternDetailPageData(id);
@@ -46,6 +46,19 @@ const PatternDetailPage = async ({ params }: PatternDetailPageProps) => {
     <div className="-mx-4 -mt-2 px-4 pt-2">
       <PatternDetailScreen key={data.pattern.id} initialPattern={data.pattern} />
     </div>
+  );
+};
+
+/**
+ * 도안 상세(뷰어) 페이지이다.
+ */
+const PatternDetailPage = async ({ params }: PatternDetailPageProps) => {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={<LoadingState variant="detail" />}>
+      <PatternDetailLoader id={id} />
+    </Suspense>
   );
 };
 

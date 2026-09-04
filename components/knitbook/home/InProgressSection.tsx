@@ -42,7 +42,7 @@ const InProgressSection = ({
           variant="ghost"
           size="icon-xs"
           nativeButton={false}
-          render={<Link href="/projects/new" />}
+          render={<Link href="/projects/new" prefetch />}
           aria-label="새 작품"
         >
           <Plus />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import HomeDashboard from "@/app/HomeDashboard";
-import LoadingState from "@/components/knitbook/shared/LoadingState";
+import HomePageFallback from "@/components/knitbook/home/HomePageFallback";
 import { getHomeDashboardData } from "@/lib/knitbook/home-data";
 
 export const metadata: Metadata = {
@@ -37,7 +37,7 @@ const HomeDashboardLoader = async () => {
  */
 const HomePage = () => {
   return (
-    <Suspense fallback={<LoadingState variant="spinner" />}>
+    <Suspense fallback={<HomePageFallback />}>
       <HomeDashboardLoader />
     </Suspense>
   );

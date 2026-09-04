@@ -19,6 +19,7 @@ const HomeMoreTile = ({
   return (
     <Link
       href={href}
+      prefetch
       className={cn(
         "group block outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-lg",
         className

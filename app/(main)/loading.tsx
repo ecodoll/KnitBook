@@ -1,10 +1,10 @@
-import PageLoading from "@/components/knitbook/shared/PageLoading";
+import HomePageFallback from "@/components/knitbook/home/HomePageFallback";
 
 /**
- * 홈·도안 등 앱 화면이 준비되는 동안 뜨개 스피너를 보여준다.
+ * 홈 화면이 준비되는 동안 섹션 골격을 보여 준다.
  */
 const MainLoading = () => {
-  return <PageLoading />;
+  return <HomePageFallback />;
 };
 
 export default MainLoading;

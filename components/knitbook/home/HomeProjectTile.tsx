@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import type { Project } from "@/components/knitbook/types";
+import ProjectCover from "@/components/knitbook/projects/ProjectCover";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { Layers, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 type HomeProjectTileProps = {
   project: Project;
@@ -28,18 +31,11 @@ const HomeProjectTile = ({
         className="group block outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-lg"
       >
         <div className="relative aspect-square overflow-hidden rounded-lg bg-secondary ring-1 ring-foreground/10 transition-shadow group-hover:shadow-sm">
-          {project.coverImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element -- 외부 스토리지 URL 대응
-            <img
-              src={project.coverImageUrl}
-              alt=""
-              className="size-full object-cover"
-            />
-          ) : (
-            <span className="flex size-full items-center justify-center">
-              <Layers className="size-5 text-muted-foreground" aria-hidden />
-            </span>
-          )}
+          <ProjectCover
+            project={project}
+            className="size-full rounded-none"
+            iconClassName="size-5"
+          />
         </div>
         <Progress
           value={clamped}
