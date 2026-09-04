@@ -5,7 +5,7 @@ import type { Project, ProjectStatus } from "@/components/knitbook/types";
 import ProjectProgress from "@/components/knitbook/projects/ProjectProgress";
 import ProjectStatusBadge from "@/components/knitbook/projects/ProjectStatusBadge";
 import ProjectStatusSelect from "@/components/knitbook/projects/ProjectStatusSelect";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { BookOpen, ChevronRight, Layers, Plus, Scissors } from "lucide-react";
@@ -225,19 +225,20 @@ const ProjectCard = ({
               </p>
             ) : null}
           </Link>
-          <div className="flex h-20 shrink-0 flex-col items-end justify-start gap-1.5">
+          <div className="flex h-20 shrink-0 flex-col items-end gap-1.5">
             <ProjectStatusBadge status={project.status} />
             {onQuickLog ? (
-              <Button
+              <button
                 type="button"
-                variant="secondary"
-                size="icon-sm"
-                className="rounded-lg"
+                className={cn(
+                  buttonVariants({ variant: "secondary" }),
+                  "h-auto min-h-0 w-auto min-w-0 flex-1 aspect-square rounded-lg p-0"
+                )}
                 aria-label={`${project.title} 작업 기록`}
                 onClick={() => onQuickLog(project.id)}
               >
-                <Plus />
-              </Button>
+                <Plus className="size-5" />
+              </button>
             ) : null}
           </div>
         </div>

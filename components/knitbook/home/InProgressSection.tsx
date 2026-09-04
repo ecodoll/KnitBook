@@ -49,7 +49,13 @@ const InProgressSection = ({
         </Button>
       </HomeSectionHeader>
 
-      {isLoading ? <LoadingState variant="tiles" rows={3} /> : null}
+      {isLoading ? (
+        <LoadingState
+          variant="tiles"
+          rows={4}
+          className="grid-cols-4 gap-2 min-[390px]:grid-cols-5"
+        />
+      ) : null}
 
       {!isLoading && errorMessage ? (
         <ErrorState message={errorMessage} onRetry={onRetry} />
@@ -64,7 +70,7 @@ const InProgressSection = ({
       ) : null}
 
       {!isLoading && !errorMessage && visibleProjects.length > 0 ? (
-        <ul className="grid grid-cols-4 gap-2">
+        <ul className="grid grid-cols-4 gap-2 min-[390px]:grid-cols-5">
           {visibleProjects.map((project) => (
             <li key={project.id}>
               <HomeProjectTile project={project} onQuickLog={onQuickLog} />
