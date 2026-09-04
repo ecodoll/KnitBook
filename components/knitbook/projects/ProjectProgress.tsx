@@ -7,6 +7,8 @@ type ProjectProgressProps = {
   totalRows?: number;
   className?: string;
   showLabel?: boolean;
+  /** edge는 카드 상단 테두리형 게이지만 표시한다. */
+  variant?: "default" | "edge";
 };
 
 /**
@@ -18,8 +20,27 @@ const ProjectProgress = ({
   totalRows,
   className,
   showLabel = true,
+  variant = "default",
 }: ProjectProgressProps) => {
   const clamped = Math.min(100, Math.max(0, percent));
+
+  if (variant === "edge") {
+    return (
+      <div
+        role="progressbar"
+        aria-label={`진행률 ${clamped}%`}
+        aria-valuenow={clamped}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        className={cn("h-1 w-full bg-muted", className)}
+      >
+        <div
+          className="h-full bg-primary transition-[width]"
+          style={{ width: `${clamped}%` }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={cn("space-y-1.5", className)}>

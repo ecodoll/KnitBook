@@ -25,9 +25,9 @@ const HomeProjectTile = ({
     <div className={cn("relative", className)}>
       <Link
         href={`/projects/${project.id}`}
-        className="group block outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-xl"
+        className="group block outline-none focus-visible:ring-3 focus-visible:ring-ring/50 rounded-lg"
       >
-        <div className="relative aspect-square overflow-hidden rounded-xl bg-secondary ring-1 ring-foreground/10 transition-shadow group-hover:shadow-sm">
+        <div className="relative aspect-square overflow-hidden rounded-lg bg-secondary ring-1 ring-foreground/10 transition-shadow group-hover:shadow-sm">
           {project.coverImageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- 외부 스토리지 URL 대응
             <img
@@ -37,7 +37,7 @@ const HomeProjectTile = ({
             />
           ) : (
             <span className="flex size-full items-center justify-center">
-              <Layers className="size-6 text-muted-foreground" aria-hidden />
+              <Layers className="size-5 text-muted-foreground" aria-hidden />
             </span>
           )}
         </div>

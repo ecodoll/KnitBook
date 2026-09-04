@@ -7,6 +7,7 @@ import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
 import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
 import YarnSummarySection from "@/components/knitbook/home/YarnSummarySection";
+import { sortProjectsByLatestWork } from "@/components/knitbook/home/constants";
 import QuickLogForm, {
   type QuickLogValues,
 } from "@/components/knitbook/projects/QuickLogForm";
@@ -41,10 +42,18 @@ const HomeDashboard = ({
   initialYarnSummary,
 }: HomeDashboardProps) => {
   const router = useRouter();
-  const [projects, setProjects] = useState(initialProjects);
+  const [projectsSource, setProjectsSource] = useState(initialProjects);
+  const [projects, setProjects] = useState(() =>
+    sortProjectsByLatestWork(initialProjects)
+  );
   const [logOpen, setLogOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isSavingLog, setIsSavingLog] = useState(false);
+
+  if (initialProjects !== projectsSource) {
+    setProjectsSource(initialProjects);
+    setProjects(sortProjectsByLatestWork(initialProjects));
+  }
 
   const openQuickLog = (projectId: string) => {
     const target = projects.find((project) => project.id === projectId) ?? null;
@@ -66,7 +75,9 @@ const HomeDashboard = ({
       const { project } = await saveWorkLog(activeProject.id, values);
 
       setProjects((prev) =>
-        prev.map((item) => (item.id === project.id ? { ...item, ...project } : item))
+        sortProjectsByLatestWork(
+          prev.map((item) => (item.id === project.id ? { ...item, ...project } : item))
+        )
       );
 
       setLogOpen(false);

@@ -18,6 +18,7 @@ export { default as SearchBar } from "@/components/knitbook/shared/SearchBar";
 export { default as HomeGreeting } from "@/components/knitbook/home/HomeGreeting";
 export { default as HomeAiTeaser } from "@/components/knitbook/home/HomeAiTeaser";
 export { default as InProgressSection } from "@/components/knitbook/home/InProgressSection";
+export { default as HomeMoreTile } from "@/components/knitbook/home/HomeMoreTile";
 export { default as RecentPatternsSection } from "@/components/knitbook/home/RecentPatternsSection";
 export { default as YarnSummarySection } from "@/components/knitbook/home/YarnSummarySection";
 
@@ -35,6 +36,7 @@ export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCa
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";
 export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";
 export { default as ProjectStatusBadge } from "@/components/knitbook/projects/ProjectStatusBadge";
+export { default as ProjectStatusSelect } from "@/components/knitbook/projects/ProjectStatusSelect";
 export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLogForm";
 export { default as ProjectForm } from "@/components/knitbook/projects/ProjectForm";
 export { default as ProjectYarnPicker } from "@/components/knitbook/projects/ProjectYarnPicker";
