@@ -204,38 +204,39 @@ const ProjectCard = ({
           <Link href={`/projects/${project.id}`} className="shrink-0">
             <ProjectCover project={project} className="size-20" />
           </Link>
-          <div className="min-w-0 flex-1 space-y-1.5">
-            <Link href={`/projects/${project.id}`} className="block space-y-1">
-              <div className="flex items-start justify-between gap-2">
-                <CardTitle className="line-clamp-2 hover:underline">
-                  {project.title}
-                </CardTitle>
-                <ProjectStatusBadge status={project.status} />
-              </div>
-              {rowSummary ? (
-                <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
-              ) : null}
-              {lastWorkedLabel ? (
-                <p className="text-xs text-muted-foreground">
-                  마지막 작업 {lastWorkedLabel}
-                </p>
-              ) : null}
-              {project.lastNote ? (
-                <p className="line-clamp-1 text-xs text-muted-foreground">
-                  {project.lastNote}
-                </p>
-              ) : null}
-            </Link>
+          <Link
+            href={`/projects/${project.id}`}
+            className="min-w-0 flex-1 space-y-1"
+          >
+            <CardTitle className="line-clamp-2 hover:underline">
+              {project.title}
+            </CardTitle>
+            {rowSummary ? (
+              <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
+            ) : null}
+            {lastWorkedLabel ? (
+              <p className="text-xs text-muted-foreground">
+                마지막 작업 {lastWorkedLabel}
+              </p>
+            ) : null}
+            {project.lastNote ? (
+              <p className="line-clamp-1 text-xs text-muted-foreground">
+                {project.lastNote}
+              </p>
+            ) : null}
+          </Link>
+          <div className="flex h-20 shrink-0 flex-col items-end justify-start gap-1.5">
+            <ProjectStatusBadge status={project.status} />
             {onQuickLog ? (
               <Button
                 type="button"
                 variant="secondary"
-                size="sm"
-                className="w-full"
+                size="icon-sm"
+                className="rounded-lg"
+                aria-label={`${project.title} 작업 기록`}
                 onClick={() => onQuickLog(project.id)}
               >
-                <Plus data-icon="inline-start" />
-                작업 기록
+                <Plus />
               </Button>
             ) : null}
           </div>
