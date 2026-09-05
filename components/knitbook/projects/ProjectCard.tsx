@@ -8,7 +8,8 @@ import ProjectStatusSelect from "@/components/knitbook/projects/ProjectStatusSel
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { BookOpen, ChevronRight, Layers, Plus, Scissors } from "lucide-react";
+import ProjectCover from "@/components/knitbook/projects/ProjectCover";
+import { BookOpen, ChevronRight, Plus, Scissors } from "lucide-react";
 
 type ProjectCardProps = {
   project: Project;
@@ -108,37 +109,6 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
         </dd>
       </div>
     </dl>
-  );
-};
-
-/**
- * 작품 사진 자리(있으면 사진, 없으면 아이콘)를 렌더한다.
- */
-const ProjectCover = ({
-  project,
-  className,
-}: {
-  project: Project;
-  className?: string;
-}) => {
-  return (
-    <div
-      className={cn(
-        "relative flex shrink-0 items-center justify-center overflow-hidden rounded-lg bg-secondary",
-        className
-      )}
-    >
-      {project.coverImageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- 스토리지 서명 URL 대응
-        <img
-          src={project.coverImageUrl}
-          alt={`${project.title} 사진`}
-          className="size-full object-cover"
-        />
-      ) : (
-        <Layers className="size-7 text-muted-foreground" aria-hidden />
-      )}
-    </div>
   );
 };
 

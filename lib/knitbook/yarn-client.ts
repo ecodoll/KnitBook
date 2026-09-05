@@ -12,7 +12,6 @@ import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
 import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
 import {
   createSignedYarnImageUrl,
-  createSignedYarnImageUrls,
 } from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/client";
 
@@ -95,6 +94,14 @@ const toYarnWritePayload = (values: YarnFormValues): YarnWritePayload => {
     remaining_weight: remainingWeight,
     notes: emptyToNull(values.memo),
   };
+};
+
+/**
+ * 실 사진 Storage 경로를 표시용 서명 URL로 만든다.
+ */
+const resolveYarnImageUrl = async (storagePath: string) => {
+  const supabase = createClient();
+  return createSignedYarnImageUrl(supabase, storagePath);
 };
 
 /**
@@ -219,17 +226,7 @@ const fetchYarns = async (): Promise<Yarn[]> => {
     throw new Error("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  const rows = (data ?? []) as YarnRow[];
-  const mapped = rows.map((row) => mapYarn(row));
-  const signedUrls = await createSignedYarnImageUrls(
-    supabase,
-    mapped.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
-  );
-
-  return mapped.map((yarn, index) => ({
-    ...yarn,
-    imageUrl: signedUrls[index] ?? yarn.imageUrl,
-  }));
+  return ((data ?? []) as YarnRow[]).map((row) => mapYarn(row));
 };
 
 /**
@@ -256,7 +253,7 @@ const fetchYarnDetail = async (yarnId: string): Promise<Yarn> => {
     throw new Error("실 정보를 찾을 수 없어요.");
   }
 
-  return mapYarnWithImage(supabase, data as YarnRow);
+  return mapYarn(data as YarnRow);
 };
 
 /**
@@ -402,4 +399,5 @@ export {
   updateYarn,
   deductYarnStock,
   deleteYarn,
+  resolveYarnImageUrl,
 };

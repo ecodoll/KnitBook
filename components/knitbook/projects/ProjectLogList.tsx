@@ -1,6 +1,10 @@
+"use client";
+
 import type { WorkLog } from "@/components/knitbook/types";
 import EmptyState from "@/components/knitbook/shared/EmptyState";
+import StorageImage from "@/components/knitbook/shared/StorageImage";
 import { formatWorkDurationLabel } from "@/lib/knitbook/projects/constants";
+import { resolveProjectImageUrl } from "@/lib/knitbook/project-client";
 
 type ProjectLogListProps = {
   logs: WorkLog[];
@@ -46,13 +50,15 @@ const ProjectLogList = ({ logs }: ProjectLogListProps) => {
                 .filter(Boolean)
                 .join(" · ") || "진행 기록"}
             </p>
-            {log.photoUrl ? (
+            {log.photoUrl || log.photoStoragePath ? (
               <div className="mt-2 overflow-hidden rounded-md bg-secondary">
-                {/* eslint-disable-next-line @next/next/no-img-element -- 스토리지 서명 URL 대응 */}
-                <img
+                <StorageImage
                   src={log.photoUrl}
+                  storagePath={log.photoStoragePath}
+                  resolveUrl={resolveProjectImageUrl}
                   alt=""
                   className="aspect-square w-full object-cover"
+                  fallback={null}
                 />
               </div>
             ) : null}

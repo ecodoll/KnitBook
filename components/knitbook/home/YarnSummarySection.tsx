@@ -34,7 +34,7 @@ const YarnSummarySection = ({
           variant="ghost"
           size="xs"
           nativeButton={false}
-          render={<Link href="/yarns" />}
+          render={<Link href="/yarns" prefetch />}
         >
           전체
         </Button>

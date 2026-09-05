@@ -22,6 +22,7 @@ import {
 import {
   attachSignedProjectCovers,
   attachSignedWorkLogPhotos,
+  createSignedProjectCoverUrl,
 } from "@/lib/knitbook/projects/signed-url";
 import { mapYarnImageUploadError } from "@/lib/knitbook/yarns/constants";
 import { prepareYarnImageFile } from "@/lib/knitbook/yarns/prepare-image";
@@ -272,6 +273,14 @@ const uploadProjectCover = async (
 };
 
 /**
+ * 작품 사진 Storage 경로를 표시용 서명 URL로 만든다.
+ */
+const resolveProjectImageUrl = async (storagePath: string) => {
+  const supabase = createClient();
+  return createSignedProjectCoverUrl(supabase, storagePath);
+};
+
+/**
  * 작품에 서명된 대표 사진 URL을 붙인다.
  */
 const withSignedCover = async (
@@ -305,10 +314,7 @@ const fetchProjects = async (): Promise<Project[]> => {
     throw new Error("작품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return attachSignedProjectCovers(
-    supabase,
-    ((data ?? []) as unknown as ProjectRow[]).map((row) => mapProject(row))
-  );
+  return ((data ?? []) as unknown as ProjectRow[]).map((row) => mapProject(row));
 };
 
 /**
@@ -654,4 +660,5 @@ export {
   updateProjectProgress,
   saveWorkLog,
   deleteProject,
+  resolveProjectImageUrl,
 };

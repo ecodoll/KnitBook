@@ -32,6 +32,7 @@ export { default as PatternMemoPanel } from "@/components/knitbook/patterns/Patt
 export { default as StartProjectDialog } from "@/components/knitbook/patterns/StartProjectDialog";
 export { default as RenamePatternDialog } from "@/components/knitbook/patterns/RenamePatternDialog";
 
+export { default as ProjectCover } from "@/components/knitbook/projects/ProjectCover";
 export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCard";
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";
 export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";

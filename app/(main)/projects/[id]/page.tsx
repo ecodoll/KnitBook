@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import ProjectDetailScreen from "@/app/(main)/projects/[id]/ProjectDetailScreen";
+import LoadingState from "@/components/knitbook/shared/LoadingState";
 import { getPatternsPageData } from "@/lib/knitbook/pattern-data";
 import { getProjectDetailPageData } from "@/lib/knitbook/project-data";
 import { getYarnsPageData } from "@/lib/knitbook/yarn-data";
@@ -30,11 +32,9 @@ export const generateMetadata = async ({
 };
 
 /**
- * 작품 상세 페이지이다.
+ * 작품 상세 본문을 불러와 렌더한다.
  */
-const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
-  const { id } = await params;
-
+const ProjectDetailLoader = async ({ id }: { id: string }) => {
   let detail;
   let patternsData;
   let yarnsData;
@@ -67,6 +67,19 @@ const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
       patterns={patternsData.patterns}
       yarns={yarnsData.yarns}
     />
+  );
+};
+
+/**
+ * 작품 상세 페이지이다.
+ */
+const ProjectDetailPage = async ({ params }: ProjectDetailPageProps) => {
+  const { id } = await params;
+
+  return (
+    <Suspense fallback={<LoadingState variant="detail" />}>
+      <ProjectDetailLoader id={id} />
+    </Suspense>
   );
 };
 

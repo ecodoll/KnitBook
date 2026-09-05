@@ -1,10 +1,10 @@
-import PageLoading from "@/components/knitbook/shared/PageLoading";
+import ProjectsPageFallback from "@/components/knitbook/projects/ProjectsPageFallback";
 
 /**
- * 작품 목록 진입 시 라우트 로딩을 표시한다.
+ * 작품 목록 진입 시 카드 골격을 바로 보여 준다.
  */
 const ProjectsLoading = () => {
-  return <PageLoading />;
+  return <ProjectsPageFallback />;
 };
 
 export default ProjectsLoading;

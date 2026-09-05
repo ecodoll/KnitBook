@@ -1,10 +1,10 @@
-import PageLoading from "@/components/knitbook/shared/PageLoading";
+import LoadingState from "@/components/knitbook/shared/LoadingState";
 
 /**
- * 실 상세 진입 시 라우트 로딩을 표시한다.
+ * 실 상세 진입 시 골격 화면을 보여 준다.
  */
 const YarnDetailLoading = () => {
-  return <PageLoading />;
+  return <LoadingState variant="detail" />;
 };
 
 export default YarnDetailLoading;
