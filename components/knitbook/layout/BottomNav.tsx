@@ -34,7 +34,7 @@ const BottomNavItemInner = ({
   return (
     <span
       className={cn(
-        "flex h-full flex-col items-center justify-center gap-0.5 text-xs transition-colors",
+        "flex h-full w-full flex-col items-center justify-center gap-0.5 text-xs transition-colors",
         highlight
           ? "text-primary font-medium"
           : "text-muted-foreground hover:text-foreground"
@@ -54,10 +54,10 @@ const BottomNav = () => {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-x-0 bottom-0 z-40 w-full border-t border-border bg-card/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
       aria-label="주요 메뉴"
     >
-      <ul className="mx-auto flex h-16 max-w-lg items-stretch justify-around px-1">
+      <ul className="mx-auto grid h-16 w-full max-w-lg grid-cols-5 px-1">
         {NAV_ITEMS.map(({ href, label, icon }) => {
           const isActive =
             href === "/"
@@ -65,7 +65,7 @@ const BottomNav = () => {
               : pathname === href || pathname.startsWith(`${href}/`);
 
           return (
-            <li key={href} className="flex-1">
+            <li key={href} className="min-w-0">
               <Link
                 href={href}
                 prefetch
