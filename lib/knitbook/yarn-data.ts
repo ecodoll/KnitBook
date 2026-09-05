@@ -3,7 +3,6 @@ import type { Yarn } from "@/components/knitbook/types";
 import { getAuthUser } from "@/lib/knitbook/app-user";
 import { YARN_SELECT } from "@/lib/knitbook/yarns/constants";
 import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
-import { createSignedYarnImageUrls } from "@/lib/knitbook/yarns/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type YarnsPageData = {
@@ -15,26 +14,8 @@ export type YarnDetailPageData = {
 };
 
 /**
- * DB 실 행들에 사진 서명 URL을 붙여 UI 타입으로 변환한다.
- */
-const mapYarnsWithImages = async (
-  rows: YarnRow[]
-): Promise<Yarn[]> => {
-  const supabase = await createClient();
-  const mapped = rows.map((row) => mapYarn(row));
-  const signedUrls = await createSignedYarnImageUrls(
-    supabase,
-    mapped.map((yarn) => yarn.imageStoragePath ?? yarn.imageUrl)
-  );
-
-  return mapped.map((yarn, index) => ({
-    ...yarn,
-    imageUrl: signedUrls[index] ?? yarn.imageUrl,
-  }));
-};
-
-/**
  * 로그인한 사용자의 실 재고 목록을 불러온다.
+ * 사진 서명은 카드에서 처리해 목록 전환을 막지 않는다.
  */
 const getYarnsPageData = cache(async (): Promise<YarnsPageData | null> => {
   const authUser = await getAuthUser();
@@ -57,7 +38,7 @@ const getYarnsPageData = cache(async (): Promise<YarnsPageData | null> => {
   }
 
   return {
-    yarns: await mapYarnsWithImages((data ?? []) as YarnRow[]),
+    yarns: ((data ?? []) as YarnRow[]).map((row) => mapYarn(row)),
   };
 });
 
@@ -91,10 +72,8 @@ const getYarnDetailPageData = cache(async (
     return null;
   }
 
-  const [yarn] = await mapYarnsWithImages([data as YarnRow]);
-
   return {
-    yarn,
+    yarn: mapYarn(data as YarnRow),
   };
 });
 

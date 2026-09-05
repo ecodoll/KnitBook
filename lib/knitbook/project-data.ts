@@ -14,10 +14,6 @@ import {
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
-import {
-  attachSignedProjectCovers,
-  attachSignedWorkLogPhotos,
-} from "@/lib/knitbook/projects/signed-url";
 import { createClient } from "@/lib/supabase/server";
 
 export type ProjectsPageData = {
@@ -98,9 +94,8 @@ const getProjectsPageData = cache(async (): Promise<ProjectsPageData | null> => 
   const rows = (data ?? []) as unknown as ProjectRow[];
   const latestLogs = await loadLatestLogs(rows.map((row) => row.id));
 
-  const projects = await attachSignedProjectCovers(
-    supabase,
-    rows.map((row) => mapProject(row, latestLogs.get(row.id) ?? null))
+  const projects = rows.map((row) =>
+    mapProject(row, latestLogs.get(row.id) ?? null)
   );
 
   return {
@@ -157,13 +152,9 @@ const getProjectDetailPageData = cache(async (
 
   const typedLogs = (logRows ?? []) as ProjectLogRow[];
 
-  const [project] = await attachSignedProjectCovers(supabase, [
-    mapProject(data as unknown as ProjectRow, typedLogs[0] ?? null),
-  ]);
-
   return {
-    project,
-    logs: await attachSignedWorkLogPhotos(supabase, typedLogs.map(mapWorkLog)),
+    project: mapProject(data as unknown as ProjectRow, typedLogs[0] ?? null),
+    logs: typedLogs.map(mapWorkLog),
   };
 });
 

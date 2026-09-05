@@ -32,12 +32,12 @@ const updateSession = async (request: NextRequest) => {
     }
   );
 
-  // getUser()로 서버에서 JWT를 검증한다.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims()로 JWT를 로컬 검증한다. (getUser()보다 화면 전환이 빠르다)
+  const { data } = await supabase.auth.getClaims();
+  const userId =
+    typeof data?.claims?.sub === "string" ? data.claims.sub : null;
 
-  return { supabaseResponse, user };
+  return { supabaseResponse, user: userId ? { id: userId } : null };
 };
 
 export { updateSession };

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import NewProjectScreen from "@/app/(main)/projects/new/NewProjectScreen";
+import LoadingState from "@/components/knitbook/shared/LoadingState";
 import { getPatternsPageData } from "@/lib/knitbook/pattern-data";
 import { getYarnsPageData } from "@/lib/knitbook/yarn-data";
 
@@ -14,11 +16,17 @@ type NewProjectPageProps = {
 };
 
 /**
- * 작품 생성 페이지이다.
+ * 작품 생성 폼에 필요한 도안·실 목록을 불러온다.
  */
-const NewProjectPage = async ({ searchParams }: NewProjectPageProps) => {
-  const params = await searchParams;
-
+const NewProjectLoader = async ({
+  title,
+  patternId,
+  yarnId,
+}: {
+  title?: string;
+  patternId?: string;
+  yarnId?: string;
+}) => {
   let patternsData;
   let yarnsData;
   try {
@@ -38,10 +46,27 @@ const NewProjectPage = async ({ searchParams }: NewProjectPageProps) => {
     <NewProjectScreen
       patterns={patternsData.patterns}
       yarns={yarnsData.yarns}
-      defaultTitle={params.title}
-      defaultPatternId={params.patternId}
-      defaultYarnId={params.yarnId}
+      defaultTitle={title}
+      defaultPatternId={patternId}
+      defaultYarnId={yarnId}
     />
+  );
+};
+
+/**
+ * 작품 생성 페이지이다.
+ */
+const NewProjectPage = async ({ searchParams }: NewProjectPageProps) => {
+  const params = await searchParams;
+
+  return (
+    <Suspense fallback={<LoadingState variant="detail" />}>
+      <NewProjectLoader
+        title={params.title}
+        patternId={params.patternId}
+        yarnId={params.yarnId}
+      />
+    </Suspense>
   );
 };
 

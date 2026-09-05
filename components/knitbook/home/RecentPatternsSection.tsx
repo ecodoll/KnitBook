@@ -35,7 +35,7 @@ const RecentPatternsSection = ({
           variant="ghost"
           size="xs"
           nativeButton={false}
-          render={<Link href="/patterns" />}
+          render={<Link href="/patterns" prefetch />}
         >
           전체
         </Button>
