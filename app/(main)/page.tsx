@@ -25,6 +25,7 @@ const HomeDashboardLoader = async () => {
     <HomeDashboard
       nickname={dashboard.user.nickname}
       initialProjects={dashboard.projects}
+      initialProjectsError={dashboard.projectsError}
       initialPatterns={dashboard.patterns}
       initialYarnSummary={dashboard.yarnSummary}
     />
