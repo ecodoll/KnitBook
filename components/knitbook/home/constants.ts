@@ -1,10 +1,10 @@
 import type { Project } from "@/components/knitbook/types";
 
-/** 홈에서 한 줄에 보여주는 진행 작품 최대 개수 */
+/** 홈에서 한 줄에 보여주는 최근 작품 최대 개수 */
 export const HOME_PROJECT_VISIBLE_LIMIT = 3;
 
 /**
- * 최근 작업 시각이 늦은 작품이 앞에 오도록 정렬한다.
+ * 최근 업데이트 시각이 늦은 작품이 앞에 오도록 정렬한다.
  */
 export const sortProjectsByLatestWork = (projects: Project[]) => {
   return [...projects].sort((left, right) => {

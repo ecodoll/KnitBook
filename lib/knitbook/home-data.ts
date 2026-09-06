@@ -14,6 +14,7 @@ import {
 import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
 import {
   HOME_PATTERN_VISIBLE_LIMIT,
+  HOME_PROJECT_VISIBLE_LIMIT,
   HOME_YARN_THUMB_LIMIT,
   sortProjectsByLatestWork,
 } from "@/components/knitbook/home/constants";
@@ -77,6 +78,21 @@ const formatSupabaseError = (error: unknown) => {
 };
 
 /**
+ * 두 시각 중 더 최근인 값을 고른다.
+ */
+const pickLaterTimestamp = (
+  left?: string | null,
+  right?: string | null
+) => {
+  const leftTime = Date.parse(left ?? "") || 0;
+  const rightTime = Date.parse(right ?? "") || 0;
+  if (rightTime > leftTime) {
+    return right ?? undefined;
+  }
+  return left ?? right ?? undefined;
+};
+
+/**
  * 숫자형 DB 값을 number로 안전하게 변환한다.
  */
 const toNumber = (value: number | string | null | undefined) => {
@@ -109,7 +125,7 @@ const mapProject = (
     progressPercent: toNumber(row.progress_percent) ?? 0,
     currentRow: row.current_row ?? undefined,
     totalRows: row.total_row ?? undefined,
-    lastWorkedAt: latestLog?.created_at ?? row.updated_at,
+    lastWorkedAt: pickLaterTimestamp(latestLog?.created_at, row.updated_at),
     lastNote: latestLog?.memo ?? row.notes ?? undefined,
     patternId: row.pattern_id ?? undefined,
   };
@@ -134,13 +150,13 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     { data: yarnRows, error: yarnsError },
   ] = await Promise.all([
     getAppHeaderUser(),
+    // 상태와 관계없이 전체 작품을 가져온 뒤, 최근 업데이트순 3개만 쓴다.
     supabase
       .from("projects")
       .select(
         "id, title, status, progress_percent, current_row, total_row, cover_image_url, pattern_id, notes, updated_at"
       )
       .eq("user_id", user.id)
-      .eq("status", "in_progress")
       .order("updated_at", { ascending: false }),
     supabase
       .from("patterns")
@@ -199,7 +215,7 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
     typedProjects.map((row) =>
       mapProject(row, latestLogsByProject.get(row.id) ?? null)
     )
-  );
+  ).slice(0, HOME_PROJECT_VISIBLE_LIMIT);
 
   // 표지·실 사진 서명은 카드에서 처리해 홈 전환을 막지 않는다.
   const patterns = ((patternRows ?? []) as PatternRow[]).map((row) =>
