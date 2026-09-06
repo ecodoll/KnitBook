@@ -22,7 +22,7 @@ type InProgressSectionProps = {
 };
 
 /**
- * 홈의 진행 중인 작품을 최근 작업순으로 최대 3개 보여 준다.
+ * 홈에 전체 작품 중 최근 업데이트순으로 최대 3개를 보여 준다.
  */
 const InProgressSection = ({
   projects,
@@ -31,9 +31,10 @@ const InProgressSection = ({
   onRetry,
   onQuickLog,
 }: InProgressSectionProps) => {
-  const visibleProjects = sortProjectsByLatestWork(
-    projects.filter((project) => project.status === "in_progress")
-  ).slice(0, HOME_PROJECT_VISIBLE_LIMIT);
+  const visibleProjects = sortProjectsByLatestWork(projects).slice(
+    0,
+    HOME_PROJECT_VISIBLE_LIMIT
+  );
 
   return (
     <section className="space-y-2" aria-labelledby="in-progress-heading">
@@ -63,7 +64,7 @@ const InProgressSection = ({
 
       {!isLoading && !errorMessage && visibleProjects.length === 0 ? (
         <HomeSectionEmpty
-          message="진행 중인 작품이 없어요"
+          message="아직 작품이 없어요"
           actionLabel="만들기"
           actionHref="/projects/new"
         />
