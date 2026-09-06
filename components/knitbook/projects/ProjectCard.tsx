@@ -113,6 +113,24 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
   );
 };
 
+type ProjectCoverSlotProps = {
+  children: ReactNode;
+  className?: string;
+};
+
+/**
+ * 오른쪽 열 높이만큼 사진을 세로로 채운다.
+ */
+const ProjectCoverSlot = ({ children, className }: ProjectCoverSlotProps) => {
+  return (
+    <div className={cn("flex shrink-0 flex-col", className)}>
+      <div className="min-h-0 w-full flex-1 overflow-hidden rounded-lg">
+        {children}
+      </div>
+    </div>
+  );
+};
+
 type ProjectMediaLayoutProps = {
   cover: ReactNode;
   children: ReactNode;
@@ -131,17 +149,12 @@ const ProjectMediaLayout = ({
 }: ProjectMediaLayoutProps) => {
   return (
     <div className="px-(--card-spacing) pt-3">
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-3">
+      <div className="flex items-stretch gap-3">
         {cover}
-        <div className="flex min-h-0 min-w-0 flex-col gap-2">{children}</div>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">{children}</div>
       </div>
       {memo ? (
-        <p
-          className={cn(
-            "mt-2 text-left whitespace-pre-wrap",
-            memoClassName
-          )}
-        >
+        <p className={cn("mt-2 text-left whitespace-pre-wrap", memoClassName)}>
           {memo}
         </p>
       ) : null}
@@ -183,10 +196,9 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-4 text-sm"
           cover={
-            <ProjectCover
-              project={project}
-              className="h-full min-h-28 w-28 self-stretch sm:min-h-32 sm:w-32"
-            />
+            <ProjectCoverSlot className="w-28 min-h-28 sm:w-32 sm:min-h-32">
+              <ProjectCover project={project} className="h-full w-full rounded-lg" />
+            </ProjectCoverSlot>
           }
         >
           <div className="flex items-start justify-between gap-2">
@@ -212,12 +224,11 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-3 text-sm text-muted-foreground"
           cover={
-            <Link
-              href={`/projects/${project.id}`}
-              className="block h-full min-h-20 w-20 self-stretch"
-            >
-              <ProjectCover project={project} className="size-full" />
-            </Link>
+            <ProjectCoverSlot className="w-20 min-h-20">
+              <Link href={`/projects/${project.id}`} className="block h-full w-full">
+                <ProjectCover project={project} className="h-full w-full" />
+              </Link>
+            </ProjectCoverSlot>
           }
         >
           <div className="flex items-start gap-2">
