@@ -36,10 +36,10 @@ export const PROJECT_DETAIL_SELECT = `${PROJECT_SELECT}, patterns(id, title), pr
 export const PROJECT_DETAIL_SELECT_CORE = `${PROJECT_SELECT_CORE}, patterns(id, title), project_yarns(id, yarn_id, planned_quantity, used_quantity, yarns(id, brand, product_name, color_name, remaining_weight))`;
 
 /** 게이지 컬럼이 없을 때 쓰는 목록 쿼리 */
-export const PROJECT_LIST_SELECT_CORE = `${PROJECT_SELECT_CORE}, patterns(id, title)`;
+export const PROJECT_LIST_SELECT_CORE = PROJECT_DETAIL_SELECT_CORE;
 
-/** 목록에서 도안 제목까지 붙인 쿼리 */
-export const PROJECT_LIST_SELECT = `${PROJECT_SELECT}, patterns(id, title)`;
+/** 목록에서 도안 제목·연결 실까지 붙인 쿼리 */
+export const PROJECT_LIST_SELECT = PROJECT_DETAIL_SELECT;
 
 /** 작품 대표 사진 Storage 버킷 이름 */
 export const PROJECT_IMAGE_BUCKET = "project-images";

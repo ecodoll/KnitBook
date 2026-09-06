@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { Project, ProjectStatus } from "@/components/knitbook/types";
 import ProjectProgress from "@/components/knitbook/projects/ProjectProgress";
 import ProjectStatusBadge from "@/components/knitbook/projects/ProjectStatusBadge";
@@ -112,6 +113,42 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
   );
 };
 
+type ProjectMediaLayoutProps = {
+  cover: ReactNode;
+  children: ReactNode;
+  memo?: string | null;
+  memoClassName?: string;
+};
+
+/**
+ * 사진은 우측 실 항목 높이에 맞추고, 메모는 사진 바로 아래 왼쪽에 둔다.
+ */
+const ProjectMediaLayout = ({
+  cover,
+  children,
+  memo,
+  memoClassName,
+}: ProjectMediaLayoutProps) => {
+  return (
+    <div className="px-(--card-spacing) pt-3">
+      <div className="grid grid-cols-[auto_minmax(0,1fr)] items-stretch gap-3">
+        {cover}
+        <div className="flex min-h-0 min-w-0 flex-col gap-2">{children}</div>
+      </div>
+      {memo ? (
+        <p
+          className={cn(
+            "mt-2 text-left whitespace-pre-wrap",
+            memoClassName
+          )}
+        >
+          {memo}
+        </p>
+      ) : null}
+    </div>
+  );
+};
+
 /**
  * 작품 썸네일·진행률·연결 정보를 하나의 카드로 표시한다.
  */
@@ -131,6 +168,7 @@ const ProjectCard = ({
     : null;
   const rowSummary = formatRowSummary(project);
   const gaugeSummary = formatGaugeSummary(project);
+  const memo = project.notes || (!isDetail ? project.lastNote : undefined);
 
   return (
     <Card size="sm" className={cn("gap-0 pt-0", className)}>
@@ -141,77 +179,77 @@ const ProjectCard = ({
       />
 
       {isDetail ? (
-        <div className="flex items-start gap-3 px-(--card-spacing) pt-3">
-          <ProjectCover
-            project={project}
-            className="size-28 sm:size-32"
-          />
-          <div className="min-w-0 flex-1 space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <CardTitle className="text-base leading-snug">{project.title}</CardTitle>
-              {onStatusChange ? (
-                <ProjectStatusSelect
-                  status={project.status}
-                  disabled={isUpdating}
-                  onStatusChange={onStatusChange}
-                />
+        <ProjectMediaLayout
+          memo={memo}
+          memoClassName="line-clamp-4 text-sm"
+          cover={
+            <ProjectCover
+              project={project}
+              className="h-full min-h-28 w-28 self-stretch sm:min-h-32 sm:w-32"
+            />
+          }
+        >
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-base leading-snug">{project.title}</CardTitle>
+            {onStatusChange ? (
+              <ProjectStatusSelect
+                status={project.status}
+                disabled={isUpdating}
+                onStatusChange={onStatusChange}
+              />
+            ) : null}
+          </div>
+          {rowSummary ? (
+            <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
+          ) : null}
+          {gaugeSummary ? (
+            <p className="text-xs text-muted-foreground">{gaugeSummary}</p>
+          ) : null}
+          <ProjectLinkedItems project={project} />
+        </ProjectMediaLayout>
+      ) : (
+        <ProjectMediaLayout
+          memo={memo}
+          memoClassName="line-clamp-3 text-sm text-muted-foreground"
+          cover={
+            <Link
+              href={`/projects/${project.id}`}
+              className="block h-full min-h-20 w-20 self-stretch"
+            >
+              <ProjectCover project={project} className="size-full" />
+            </Link>
+          }
+        >
+          <div className="flex items-start gap-2">
+            <Link href={`/projects/${project.id}`} className="min-w-0 flex-1 space-y-1">
+              <CardTitle className="line-clamp-2 hover:underline">
+                {project.title}
+              </CardTitle>
+              {rowSummary ? (
+                <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
+              ) : null}
+              {lastWorkedLabel ? (
+                <p className="text-xs text-muted-foreground">
+                  마지막 작업 {lastWorkedLabel}
+                </p>
+              ) : null}
+            </Link>
+            <div className="flex shrink-0 flex-col items-end gap-1.5">
+              <ProjectStatusBadge status={project.status} />
+              {onQuickLog ? (
+                <button
+                  type="button"
+                  className={cn(buttonVariants({ variant: "secondary", size: "icon-sm" }))}
+                  aria-label={`${project.title} 작업 기록`}
+                  onClick={() => onQuickLog(project.id)}
+                >
+                  <Plus className="size-5" />
+                </button>
               ) : null}
             </div>
-            {rowSummary ? (
-              <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
-            ) : null}
-            {gaugeSummary ? (
-              <p className="text-xs text-muted-foreground">{gaugeSummary}</p>
-            ) : null}
-            <ProjectLinkedItems project={project} />
-            {project.notes ? (
-              <p className="line-clamp-4 whitespace-pre-wrap text-sm">{project.notes}</p>
-            ) : null}
           </div>
-        </div>
-      ) : (
-        <div className="flex items-start gap-3 px-(--card-spacing) pt-3">
-          <Link href={`/projects/${project.id}`} className="shrink-0">
-            <ProjectCover project={project} className="size-20" />
-          </Link>
-          <Link
-            href={`/projects/${project.id}`}
-            className="min-w-0 flex-1 space-y-1"
-          >
-            <CardTitle className="line-clamp-2 hover:underline">
-              {project.title}
-            </CardTitle>
-            {rowSummary ? (
-              <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
-            ) : null}
-            {lastWorkedLabel ? (
-              <p className="text-xs text-muted-foreground">
-                마지막 작업 {lastWorkedLabel}
-              </p>
-            ) : null}
-            {project.lastNote ? (
-              <p className="line-clamp-1 text-xs text-muted-foreground">
-                {project.lastNote}
-              </p>
-            ) : null}
-          </Link>
-          <div className="flex h-20 shrink-0 flex-col items-end gap-1.5">
-            <ProjectStatusBadge status={project.status} />
-            {onQuickLog ? (
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ variant: "secondary" }),
-                  "h-auto min-h-0 w-auto min-w-0 flex-1 aspect-square rounded-lg p-0"
-                )}
-                aria-label={`${project.title} 작업 기록`}
-                onClick={() => onQuickLog(project.id)}
-              >
-                <Plus className="size-5" />
-              </button>
-            ) : null}
-          </div>
-        </div>
+          <ProjectLinkedItems project={project} />
+        </ProjectMediaLayout>
       )}
     </Card>
   );
