@@ -87,7 +87,7 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
   const hasGauge = gaugeLine !== "없음";
 
   return (
-    <dl className="space-y-1 rounded-lg bg-secondary/50 px-2.5 py-2">
+    <dl className="min-h-0 flex-1 space-y-1 rounded-lg bg-secondary/50 px-2.5 py-2">
       <LinkedItemRow
         icon={<Ruler className="size-3.5" aria-hidden />}
         label="게이지"
@@ -136,21 +136,6 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
         )}
       </LinkedItemRow>
     </dl>
-  );
-};
-
-type SquareCoverSlotProps = {
-  children: ReactNode;
-};
-
-/**
- * 오른쪽 정보 높이만큼 늘어난 정사각형 사진 칸을 만든다.
- */
-const SquareCoverSlot = ({ children }: SquareCoverSlotProps) => {
-  return (
-    <div className="relative aspect-square min-h-20 shrink-0 self-stretch">
-      <div className="absolute inset-0 overflow-hidden rounded-lg">{children}</div>
-    </div>
   );
 };
 
@@ -211,9 +196,10 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-4 text-sm"
           cover={
-            <SquareCoverSlot>
-              <ProjectCover project={project} className="size-full rounded-none" />
-            </SquareCoverSlot>
+            <ProjectCover
+              project={project}
+              className="size-28 shrink-0"
+            />
           }
         >
           <div className="flex h-6 shrink-0 items-center justify-between gap-2">
@@ -235,11 +221,9 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-3 text-sm text-muted-foreground"
           cover={
-            <SquareCoverSlot>
-              <Link href={`/projects/${project.id}`} className="block size-full">
-                <ProjectCover project={project} className="size-full rounded-none" />
-              </Link>
-            </SquareCoverSlot>
+            <Link href={`/projects/${project.id}`} className="shrink-0">
+              <ProjectCover project={project} className="size-[7.25rem]" />
+            </Link>
           }
         >
           <div className="flex h-7 shrink-0 items-center gap-2">
