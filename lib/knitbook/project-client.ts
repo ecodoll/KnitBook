@@ -4,18 +4,20 @@ import type { Project, ProjectStatus, WorkLog } from "@/components/knitbook/type
 import type { QuickLogValues } from "@/components/knitbook/projects/QuickLogForm";
 import type { ProjectFormValues } from "@/components/knitbook/projects/ProjectForm";
 import {
-  buildProjectCoverPath,
   buildProjectLogPhotoPath,
   PROJECT_DETAIL_SELECT,
   PROJECT_DETAIL_SELECT_CORE,
   PROJECT_IMAGE_BUCKETS,
   PROJECT_LIST_SELECT,
   PROJECT_LIST_SELECT_CORE,
+  PROJECT_LOG_SELECT,
   PROJECT_SELECT_CORE,
 } from "@/lib/knitbook/projects/constants";
 import {
+  hasLogPhoto,
   mapProject,
   mapWorkLog,
+  pickLatestLogs,
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
@@ -235,44 +237,6 @@ const removeProjectCoverFromBuckets = async (
 };
 
 /**
- * 작품 대표 사진을 올리고 DB 경로를 갱신한다.
- */
-const uploadProjectCover = async (
-  supabase: ReturnType<typeof createClient>,
-  userId: string,
-  projectId: string,
-  file: File,
-  previousPath?: string
-) => {
-  const prepared = await prepareYarnImageFile(file);
-  const storagePath = buildProjectCoverPath(userId, projectId, prepared.extension);
-
-  await uploadProjectCoverToAvailableBucket(
-    supabase,
-    storagePath,
-    prepared.body,
-    prepared.contentType
-  );
-
-  if (previousPath && previousPath !== storagePath) {
-    await removeProjectCoverFromBuckets(supabase, previousPath);
-  }
-
-  const { error } = await supabase
-    .from("projects")
-    .update({ cover_image_url: storagePath })
-    .eq("id", projectId)
-    .eq("user_id", userId);
-
-  if (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[작품 사진 경로 저장 실패]", error);
-    }
-    throw new Error("작품 사진을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
-  }
-};
-
-/**
  * 작품 사진 Storage 경로를 표시용 서명 URL로 만든다.
  */
 const resolveProjectImageUrl = async (storagePath: string) => {
@@ -289,6 +253,40 @@ const withSignedCover = async (
 ): Promise<Project> => {
   const [signed] = await attachSignedProjectCovers(supabase, [project]);
   return signed;
+};
+
+/**
+ * 작품별 최신 기록과 사진이 있는 최근 기록을 불러온다.
+ */
+const loadLatestLogs = async (
+  supabase: ReturnType<typeof createClient>,
+  projectIds: string[]
+) => {
+  if (projectIds.length === 0) {
+    return {
+      latestByProject: new Map<string, ProjectLogRow>(),
+      latestPhotoByProject: new Map<string, ProjectLogRow>(),
+    };
+  }
+
+  const { data: logRows, error } = await supabase
+    .from("project_logs")
+    .select(PROJECT_LOG_SELECT)
+    .in("project_id", projectIds)
+    .order("created_at", { ascending: false })
+    .limit(Math.max(projectIds.length * 12, 36));
+
+  if (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작업 기록 조회 실패]", error);
+    }
+    return {
+      latestByProject: new Map<string, ProjectLogRow>(),
+      latestPhotoByProject: new Map<string, ProjectLogRow>(),
+    };
+  }
+
+  return pickLatestLogs((logRows ?? []) as ProjectLogRow[]);
 };
 
 /**
@@ -314,7 +312,19 @@ const fetchProjects = async (): Promise<Project[]> => {
     throw new Error("작품 목록을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
   }
 
-  return ((data ?? []) as unknown as ProjectRow[]).map((row) => mapProject(row));
+  const rows = (data ?? []) as unknown as ProjectRow[];
+  const { latestByProject, latestPhotoByProject } = await loadLatestLogs(
+    supabase,
+    rows.map((row) => row.id)
+  );
+
+  return rows.map((row) =>
+    mapProject(
+      row,
+      latestByProject.get(row.id) ?? null,
+      latestPhotoByProject.get(row.id) ?? null
+    )
+  );
 };
 
 /**
@@ -345,7 +355,27 @@ const fetchProjectDetail = async (projectId: string): Promise<Project> => {
     throw new Error("작품 정보를 찾을 수 없어요.");
   }
 
-  return withSignedCover(supabase, mapProject(data as unknown as ProjectRow));
+  const { data: logRows, error: logsError } = await supabase
+    .from("project_logs")
+    .select(PROJECT_LOG_SELECT)
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(24);
+
+  if (logsError && process.env.NODE_ENV === "development") {
+    console.error("[작품 기록 조회 실패]", logsError);
+  }
+
+  const typedLogs = (logRows ?? []) as ProjectLogRow[];
+
+  return withSignedCover(
+    supabase,
+    mapProject(
+      data as unknown as ProjectRow,
+      typedLogs[0] ?? null,
+      typedLogs.find((log) => hasLogPhoto(log)) ?? null
+    )
+  );
 };
 
 /**
@@ -376,9 +406,6 @@ const createProject = async (values: ProjectFormValues): Promise<Project> => {
 
   try {
     await replaceProjectYarns(supabase, projectId, userId, values.yarns);
-    if (values.photo) {
-      await uploadProjectCover(supabase, userId, projectId, values.photo);
-    }
   } catch (error) {
     await supabase.from("projects").delete().eq("id", projectId).eq("user_id", userId);
     await refreshYarnInUse(
@@ -427,16 +454,6 @@ const updateProject = async (
     values.yarns,
     previousYarnIds
   );
-
-  if (values.photo) {
-    await uploadProjectCover(
-      supabase,
-      userId,
-      projectId,
-      values.photo,
-      current.coverImageStoragePath
-    );
-  }
 
   return fetchProjectDetail(projectId);
 };
@@ -511,6 +528,127 @@ const updateProjectProgress = async (
 };
 
 /**
+ * 작품의 가장 최근 기록으로 현재 단수·진행률을 맞춘다.
+ */
+const syncProjectProgressFromLatestLog = async (
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  userId: string
+) => {
+  const { data: latest, error } = await supabase
+    .from("project_logs")
+    .select(PROJECT_LOG_SELECT)
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[최근 작업 기록 조회 실패]", error);
+    }
+    throw new Error("작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  if (!latest) {
+    return;
+  }
+
+  const typed = latest as ProjectLogRow;
+  const { error: projectError } = await supabase
+    .from("projects")
+    .update({
+      current_row: typed.row_count,
+      progress_percent: typed.progress_percent ?? 0,
+    })
+    .eq("id", projectId)
+    .eq("user_id", userId);
+
+  if (projectError) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작품 진행 반영 실패]", projectError);
+    }
+    throw new Error("작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+};
+
+/**
+ * 작업 기록 사진을 Storage에 올리고 경로를 반환한다.
+ */
+const uploadWorkLogPhoto = async (
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  projectId: string,
+  logId: string,
+  photo: File,
+  previousPath?: string | null
+) => {
+  const prepared = await prepareYarnImageFile(photo);
+  const storagePath = buildProjectLogPhotoPath(
+    userId,
+    projectId,
+    logId,
+    prepared.extension
+  );
+  await uploadProjectCoverToAvailableBucket(
+    supabase,
+    storagePath,
+    prepared.body,
+    prepared.contentType
+  );
+
+  if (
+    previousPath &&
+    previousPath !== storagePath &&
+    !previousPath.startsWith("http")
+  ) {
+    await removeProjectCoverFromBuckets(supabase, previousPath);
+  }
+
+  return storagePath;
+};
+
+/**
+ * 한 작업 기록을 읽고, 없으면 오류를 던진다.
+ */
+const requireProjectLog = async (
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  logId: string
+) => {
+  const { data, error } = await supabase
+    .from("project_logs")
+    .select(PROJECT_LOG_SELECT)
+    .eq("id", logId)
+    .eq("project_id", projectId)
+    .maybeSingle();
+
+  if (error || !data) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작업 기록 조회 실패]", error);
+    }
+    throw new Error("작업 기록을 찾지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  return data as ProjectLogRow;
+};
+
+/**
+ * 저장한 작업 기록에 서명 URL을 붙이고 작품 상세를 다시 읽는다.
+ */
+const finishWorkLogMutation = async (
+  supabase: ReturnType<typeof createClient>,
+  projectId: string,
+  logRow: ProjectLogRow
+) => {
+  const project = await fetchProjectDetail(projectId);
+  const [signedLog] = await attachSignedWorkLogPhotos(supabase, [
+    mapWorkLog(logRow),
+  ]);
+  return { project, log: signedLog };
+};
+
+/**
  * Quick Log를 남기고 단수·진행률을 작품에 반영한다. 상시 메모는 덮지 않는다.
  */
 const saveWorkLog = async (
@@ -543,25 +681,19 @@ const saveWorkLog = async (
 
   if (values.photo) {
     try {
-      const prepared = await prepareYarnImageFile(values.photo);
-      const storagePath = buildProjectLogPhotoPath(
+      const storagePath = await uploadWorkLogPhoto(
+        supabase,
         userId,
         projectId,
         typedLog.id,
-        prepared.extension
-      );
-      await uploadProjectCoverToAvailableBucket(
-        supabase,
-        storagePath,
-        prepared.body,
-        prepared.contentType
+        values.photo
       );
 
       const { data: updatedLog, error: photoError } = await supabase
         .from("project_logs")
         .update({ photo_url: storagePath })
         .eq("id", typedLog.id)
-        .select("id, project_id, logged_on, row_count, progress_percent, work_minutes, photo_url, memo, created_at")
+        .select(PROJECT_LOG_SELECT)
         .single();
 
       if (photoError || !updatedLog) {
@@ -580,47 +712,97 @@ const saveWorkLog = async (
     }
   }
 
-  const projectPatch: {
-    current_row?: number | null;
-    progress_percent?: number | null;
-  } = {};
+  await syncProjectProgressFromLatestLog(supabase, projectId, userId);
+  return finishWorkLogMutation(supabase, projectId, typedLog);
+};
 
-  if (values.currentRow !== null) {
-    projectPatch.current_row = values.currentRow;
-  }
-  if (values.progressPercent !== null) {
-    projectPatch.progress_percent = values.progressPercent;
-  }
+/**
+ * 기존 작업 기록을 수정하고, 최신 기록이면 작품 진행도 맞춘다.
+ */
+const updateWorkLog = async (
+  projectId: string,
+  logId: string,
+  values: QuickLogValues
+): Promise<{ project: Project; log: WorkLog }> => {
+  const { supabase, userId } = await requireUserId();
+  const current = await requireProjectLog(supabase, projectId, logId);
 
-  if (Object.keys(projectPatch).length > 0) {
-    const { error: projectError } = await supabase
-      .from("projects")
-      .update(projectPatch)
-      .eq("id", projectId)
-      .eq("user_id", userId);
+  const patch: Record<string, unknown> = {
+    logged_on: values.loggedOn || current.logged_on,
+    row_count: values.currentRow,
+    progress_percent: values.progressPercent,
+    work_minutes: values.durationMinutes,
+    memo: values.memo || null,
+  };
 
-    if (projectError) {
+  if (values.photo) {
+    try {
+      patch.photo_url = await uploadWorkLogPhoto(
+        supabase,
+        userId,
+        projectId,
+        logId,
+        values.photo,
+        current.photo_url
+      );
+    } catch (photoError) {
       if (process.env.NODE_ENV === "development") {
-        console.error("[작품 진행 반영 실패]", projectError);
+        console.error("[작업 기록 사진 수정 실패]", photoError);
       }
-      throw new Error("작업 기록을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      throw photoError instanceof Error
+        ? photoError
+        : new Error("작업 사진을 올리지 못했어요. 잠시 후 다시 시도해 주세요.");
     }
   }
 
-  const project = await fetchProjectDetail(projectId);
-  const [signedLog] = await attachSignedWorkLogPhotos(supabase, [
-    mapWorkLog(typedLog),
-  ]);
-  return {
-    project: {
-      ...project,
-      currentRow: values.currentRow ?? project.currentRow,
-      progressPercent: values.progressPercent ?? project.progressPercent,
-      lastNote: values.memo.trim() || project.lastNote,
-      lastWorkedAt: typedLog.created_at,
-    },
-    log: signedLog,
-  };
+  const { data: updated, error } = await supabase
+    .from("project_logs")
+    .update(patch)
+    .eq("id", logId)
+    .eq("project_id", projectId)
+    .select(PROJECT_LOG_SELECT)
+    .single();
+
+  if (error || !updated) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작업 기록 수정 실패]", error);
+    }
+    throw new Error("작업 기록을 수정하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  await syncProjectProgressFromLatestLog(supabase, projectId, userId);
+  return finishWorkLogMutation(supabase, projectId, updated as ProjectLogRow);
+};
+
+/**
+ * 작업 기록과 사진을 지우고, 남은 최근 기록으로 작품 진행을 맞춘다.
+ */
+const deleteWorkLog = async (
+  projectId: string,
+  logId: string
+): Promise<{ project: Project }> => {
+  const { supabase, userId } = await requireUserId();
+  const current = await requireProjectLog(supabase, projectId, logId);
+
+  if (current.photo_url && !current.photo_url.startsWith("http")) {
+    await removeProjectCoverFromBuckets(supabase, current.photo_url);
+  }
+
+  const { error } = await supabase
+    .from("project_logs")
+    .delete()
+    .eq("id", logId)
+    .eq("project_id", projectId);
+
+  if (error) {
+    if (process.env.NODE_ENV === "development") {
+      console.error("[작업 기록 삭제 실패]", error);
+    }
+    throw new Error("작업 기록을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  await syncProjectProgressFromLatestLog(supabase, projectId, userId);
+  return { project: await fetchProjectDetail(projectId) };
 };
 
 /**
@@ -659,6 +841,8 @@ export {
   updateProjectStatus,
   updateProjectProgress,
   saveWorkLog,
+  updateWorkLog,
+  deleteWorkLog,
   deleteProject,
   resolveProjectImageUrl,
 };

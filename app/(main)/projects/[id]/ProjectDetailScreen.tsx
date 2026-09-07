@@ -13,9 +13,11 @@ import QuickLogForm from "@/components/knitbook/projects/QuickLogForm";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import {
   deleteProject,
+  deleteWorkLog,
   saveWorkLog,
   updateProject,
   updateProjectStatus,
+  updateWorkLog,
 } from "@/lib/knitbook/project-client";
 import {
   showNetworkErrorToast,
@@ -53,6 +55,7 @@ const ProjectDetailScreen = ({
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingLog, setIsSavingLog] = useState(false);
+  const [isDeletingLog, setIsDeletingLog] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -119,7 +122,6 @@ const ProjectDetailScreen = ({
               patterns={patterns}
               yarns={yarns}
               initialValues={projectToFormValues(project)}
-              currentImageUrl={project.coverImageUrl}
               isSubmitting={isSaving}
               submitLabel="변경 저장"
               onSubmit={async (values) => {
@@ -193,10 +195,6 @@ const ProjectDetailScreen = ({
       />
 
       <Card size="sm">
-        <CardHeader>
-          <CardTitle>작업 기록</CardTitle>
-          <CardDescription>뜨개를 멈출 때 단수와 메모를 남겨요.</CardDescription>
-        </CardHeader>
         <CardContent>
           <QuickLogForm
             projectTitle={project.title}
@@ -228,7 +226,48 @@ const ProjectDetailScreen = ({
         <h2 id="project-logs-heading" className="text-base font-medium">
           최근 기록
         </h2>
-        <ProjectLogList logs={logs} />
+        <ProjectLogList
+          logs={logs}
+          projectTitle={project.title}
+          isSaving={isSavingLog}
+          isDeleting={isDeletingLog}
+          onUpdate={async (logId, values) => {
+            setIsSavingLog(true);
+            try {
+              const result = await updateWorkLog(project.id, logId, values);
+              setProject(result.project);
+              setLogs((prev) =>
+                prev.map((log) => (log.id === result.log.id ? result.log : log))
+              );
+              showSuccessToast("작업 기록을 수정했어요");
+              router.refresh();
+            } catch (error) {
+              showNetworkErrorToast(error, "작업 기록을 수정하지 못했어요");
+              throw error instanceof Error
+                ? error
+                : new Error("작업 기록을 수정하지 못했어요. 잠시 후 다시 시도해 주세요.");
+            } finally {
+              setIsSavingLog(false);
+            }
+          }}
+          onDelete={async (logId) => {
+            setIsDeletingLog(true);
+            try {
+              const result = await deleteWorkLog(project.id, logId);
+              setProject(result.project);
+              setLogs((prev) => prev.filter((log) => log.id !== logId));
+              showSuccessToast("작업 기록을 삭제했어요");
+              router.refresh();
+            } catch (error) {
+              showNetworkErrorToast(error, "작업 기록을 삭제하지 못했어요");
+              throw error instanceof Error
+                ? error
+                : new Error("작업 기록을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.");
+            } finally {
+              setIsDeletingLog(false);
+            }
+          }}
+        />
       </section>
     </div>
   );

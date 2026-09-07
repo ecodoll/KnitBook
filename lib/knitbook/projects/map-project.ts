@@ -25,8 +25,15 @@ export type ProjectRow = {
   gauge_rows?: number | string | null;
   created_at?: string;
   updated_at?: string;
-  patterns?: { id?: string; title?: string | null } | null;
+  patterns?: PatternJoinRow | PatternJoinRow[] | null;
   project_yarns?: ProjectYarnJoinRow[] | null;
+};
+
+export type PatternJoinRow = {
+  id?: string;
+  title?: string | null;
+  cover_image_url?: string | null;
+  pdf_url?: string | null;
 };
 
 export type ProjectYarnJoinRow = {
@@ -56,6 +63,42 @@ export type ProjectLogRow = {
 };
 
 /**
+ * 작업 기록에 표시할 사진이 있는지 확인한다.
+ */
+const hasLogPhoto = (log: Pick<ProjectLogRow, "photo_url">) => {
+  return Boolean(log.photo_url && log.photo_url.trim());
+};
+
+/**
+ * 최신 기록과 사진이 있는 가장 최근 기록을 작품별로 고른다.
+ */
+const pickLatestLogs = (logs: ProjectLogRow[]) => {
+  const latestByProject = new Map<string, ProjectLogRow>();
+  const latestPhotoByProject = new Map<string, ProjectLogRow>();
+
+  for (const log of logs) {
+    if (!latestByProject.has(log.project_id)) {
+      latestByProject.set(log.project_id, log);
+    }
+    if (hasLogPhoto(log) && !latestPhotoByProject.has(log.project_id)) {
+      latestPhotoByProject.set(log.project_id, log);
+    }
+  }
+
+  return { latestByProject, latestPhotoByProject };
+};
+
+/**
+ * 도안 조인 값을 한 행으로 정규화한다.
+ */
+const normalizePatternJoin = (value: ProjectRow["patterns"]) => {
+  if (!value) {
+    return null;
+  }
+  return Array.isArray(value) ? value[0] ?? null : value;
+};
+
+/**
  * 연결된 실 조인 행을 UI 타입으로 변환한다.
  */
 const mapProjectYarn = (row: ProjectYarnJoinRow): ProjectYarnLink => {
@@ -77,24 +120,31 @@ const mapProjectYarn = (row: ProjectYarnJoinRow): ProjectYarnLink => {
  */
 const mapProject = (
   row: ProjectRow,
-  latestLog?: ProjectLogRow | null
+  latestLog?: ProjectLogRow | null,
+  latestPhotoLog?: ProjectLogRow | null
 ): Project => {
-  const coverRaw = row.cover_image_url;
+  const photoRaw = latestPhotoLog?.photo_url;
+  const pattern = normalizePatternJoin(row.patterns);
+  const patternCoverRaw = pattern?.cover_image_url;
 
   return {
     id: row.id,
     title: row.title,
     status: row.status,
-    coverImageUrl: isHttpUrl(coverRaw) ? coverRaw : undefined,
+    coverImageUrl: isHttpUrl(photoRaw) ? photoRaw : undefined,
     coverImageStoragePath:
-      coverRaw && !isHttpUrl(coverRaw) ? coverRaw : undefined,
+      photoRaw && !isHttpUrl(photoRaw) ? photoRaw : undefined,
+    patternCoverImageUrl: isHttpUrl(patternCoverRaw) ? patternCoverRaw : undefined,
+    patternCoverStoragePath:
+      patternCoverRaw && !isHttpUrl(patternCoverRaw) ? patternCoverRaw : undefined,
+    patternPdfStoragePath: pattern?.pdf_url ?? undefined,
     progressPercent: toNumber(row.progress_percent) ?? 0,
     currentRow: row.current_row ?? undefined,
     totalRows: row.total_row ?? undefined,
     lastWorkedAt: latestLog?.created_at ?? row.updated_at,
     lastNote: latestLog?.memo ?? undefined,
-    patternId: row.pattern_id ?? row.patterns?.id ?? undefined,
-    patternTitle: row.patterns?.title ?? undefined,
+    patternId: row.pattern_id ?? pattern?.id ?? undefined,
+    patternTitle: pattern?.title ?? undefined,
     size: row.size ?? undefined,
     startedAt: row.started_at ?? undefined,
     targetDate: row.target_date ?? undefined,
@@ -125,4 +175,4 @@ const mapWorkLog = (row: ProjectLogRow): WorkLog => {
   };
 };
 
-export { mapProject, mapProjectYarn, mapWorkLog };
+export { hasLogPhoto, mapProject, mapProjectYarn, mapWorkLog, pickLatestLogs };
