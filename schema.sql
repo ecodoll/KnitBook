@@ -211,6 +211,9 @@ alter table public.projects
 alter table public.projects
   add column if not exists gauge_rows numeric(6, 2);
 
+-- PostgREST가 새 컬럼을 API에 바로 반영하도록 스키마 캐시를 갱신한다.
+notify pgrst, 'reload schema';
+
 create index if not exists projects_user_id_idx on public.projects (user_id);
 create index if not exists projects_user_id_status_idx on public.projects (user_id, status);
 create index if not exists projects_pattern_id_idx on public.projects (pattern_id);
