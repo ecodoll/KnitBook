@@ -119,7 +119,6 @@ const ProjectDetailScreen = ({
               patterns={patterns}
               yarns={yarns}
               initialValues={projectToFormValues(project)}
-              currentImageUrl={project.coverImageUrl}
               isSubmitting={isSaving}
               submitLabel="변경 저장"
               onSubmit={async (values) => {

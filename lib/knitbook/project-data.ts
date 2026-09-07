@@ -6,11 +6,14 @@ import {
   PROJECT_DETAIL_SELECT_CORE,
   PROJECT_LIST_SELECT,
   PROJECT_LIST_SELECT_CORE,
+  PROJECT_LOG_SELECT,
 } from "@/lib/knitbook/projects/constants";
 import { selectWithGaugeFallback } from "@/lib/knitbook/projects/query";
 import {
+  hasLogPhoto,
   mapProject,
   mapWorkLog,
+  pickLatestLogs,
   type ProjectLogRow,
   type ProjectRow,
 } from "@/lib/knitbook/projects/map-project";
@@ -32,36 +35,35 @@ export type YarnLinkedProject = {
 };
 
 /**
- * 작품별 최신 작업 기록을 조회한다.
+ * 작품별 최신 작업 기록과 사진이 있는 최근 기록을 조회한다.
  */
 const loadLatestLogs = async (projectIds: string[]) => {
-  const latestLogsByProject = new Map<string, ProjectLogRow>();
   if (projectIds.length === 0) {
-    return latestLogsByProject;
+    return {
+      latestByProject: new Map<string, ProjectLogRow>(),
+      latestPhotoByProject: new Map<string, ProjectLogRow>(),
+    };
   }
 
   const supabase = await createClient();
   const { data: logRows, error } = await supabase
     .from("project_logs")
-    .select("id, project_id, logged_on, row_count, progress_percent, work_minutes, photo_url, memo, created_at")
+    .select(PROJECT_LOG_SELECT)
     .in("project_id", projectIds)
     .order("created_at", { ascending: false })
-    .limit(Math.max(projectIds.length * 8, 24));
+    .limit(Math.max(projectIds.length * 12, 36));
 
   if (error) {
     if (process.env.NODE_ENV === "development") {
       console.error("[작업 기록 조회 실패]", error.message);
     }
-    return latestLogsByProject;
+    return {
+      latestByProject: new Map<string, ProjectLogRow>(),
+      latestPhotoByProject: new Map<string, ProjectLogRow>(),
+    };
   }
 
-  for (const log of (logRows ?? []) as ProjectLogRow[]) {
-    if (!latestLogsByProject.has(log.project_id)) {
-      latestLogsByProject.set(log.project_id, log);
-    }
-  }
-
-  return latestLogsByProject;
+  return pickLatestLogs((logRows ?? []) as ProjectLogRow[]);
 };
 
 /**
@@ -92,10 +94,16 @@ const getProjectsPageData = cache(async (): Promise<ProjectsPageData | null> => 
   }
 
   const rows = (data ?? []) as unknown as ProjectRow[];
-  const latestLogs = await loadLatestLogs(rows.map((row) => row.id));
+  const { latestByProject, latestPhotoByProject } = await loadLatestLogs(
+    rows.map((row) => row.id)
+  );
 
   const projects = rows.map((row) =>
-    mapProject(row, latestLogs.get(row.id) ?? null)
+    mapProject(
+      row,
+      latestByProject.get(row.id) ?? null,
+      latestPhotoByProject.get(row.id) ?? null
+    )
   );
 
   return {
@@ -139,7 +147,7 @@ const getProjectDetailPageData = cache(async (
 
   const { data: logRows, error: logsError } = await supabase
     .from("project_logs")
-    .select("id, project_id, logged_on, row_count, progress_percent, work_minutes, photo_url, memo, created_at")
+    .select(PROJECT_LOG_SELECT)
     .eq("project_id", projectId)
     .order("created_at", { ascending: false });
 
@@ -151,9 +159,14 @@ const getProjectDetailPageData = cache(async (
   }
 
   const typedLogs = (logRows ?? []) as ProjectLogRow[];
+  const latestPhotoLog = typedLogs.find((log) => hasLogPhoto(log)) ?? null;
 
   return {
-    project: mapProject(data as unknown as ProjectRow, typedLogs[0] ?? null),
+    project: mapProject(
+      data as unknown as ProjectRow,
+      typedLogs[0] ?? null,
+      latestPhotoLog
+    ),
     logs: typedLogs.map(mapWorkLog),
   };
 });

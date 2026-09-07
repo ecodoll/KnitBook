@@ -52,6 +52,12 @@ export type Project = {
   coverImageUrl?: string;
   /** Storage에 저장된 대표 사진 경로. 클라이언트에서 서명해 표시한다. */
   coverImageStoragePath?: string;
+  /** 연결된 도안 표지 표시 URL */
+  patternCoverImageUrl?: string;
+  /** 연결된 도안 표지 Storage 경로 */
+  patternCoverStoragePath?: string;
+  /** 연결된 도안 PDF Storage 경로. 표지가 없을 때 썸네일을 만든다. */
+  patternPdfStoragePath?: string;
   progressPercent: number;
   currentRow?: number;
   totalRows?: number;

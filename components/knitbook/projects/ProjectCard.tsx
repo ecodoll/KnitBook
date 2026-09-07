@@ -221,9 +221,9 @@ const ProjectCard = ({
             </Link>
           }
         >
-          <div className="flex h-6 items-center gap-2">
+          <div className="flex min-h-7 items-center gap-2">
             <Link href={`/projects/${project.id}`} className="min-w-0 flex-1">
-              <CardTitle className="truncate leading-none hover:underline">
+              <CardTitle className="truncate text-base font-semibold leading-snug group-data-[size=sm]/card:text-base hover:underline">
                 {project.title}
               </CardTitle>
             </Link>
