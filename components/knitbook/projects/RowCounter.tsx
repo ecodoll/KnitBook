@@ -9,12 +9,20 @@ type RowCounterProps = {
   value: number;
   onChange: (next: number) => void;
   disabled?: boolean;
+  /** 같은 화면에 폼이 둘일 때 레이블 id가 겹치지 않게 한다. */
+  idPrefix?: string;
 };
 
 /**
  * 귀여운 단추 이미지로 현재 단수를 한 단씩 올리고 내린다.
  */
-const RowCounter = ({ value, onChange, disabled = false }: RowCounterProps) => {
+const RowCounter = ({
+  value,
+  onChange,
+  disabled = false,
+  idPrefix = "log",
+}: RowCounterProps) => {
+  const labelId = `${idPrefix}-row-counter-label`;
   const decrease = () => {
     onChange(Math.max(MIN_ROW, value - 1));
   };
@@ -25,11 +33,11 @@ const RowCounter = ({ value, onChange, disabled = false }: RowCounterProps) => {
 
   return (
     <div className="space-y-2">
-      <Label id="row-counter-label">현재 단수</Label>
+      <Label id={labelId}>현재 단수</Label>
       <div
         className="flex items-center justify-center gap-3 rounded-xl bg-muted/50 px-2 py-3 sm:gap-5"
         role="group"
-        aria-labelledby="row-counter-label"
+        aria-labelledby={labelId}
       >
         <button
           type="button"

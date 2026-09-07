@@ -12,7 +12,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import RowCounter from "@/components/knitbook/projects/RowCounter";
+import StorageImage from "@/components/knitbook/shared/StorageImage";
 import { buildProgressPercentOptions } from "@/lib/knitbook/projects/constants";
+import { resolveProjectImageUrl } from "@/lib/knitbook/project-client";
 import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 
 export type QuickLogValues = {
@@ -26,38 +28,70 @@ export type QuickLogValues = {
 
 type QuickLogFormProps = {
   projectTitle: string;
+  initialLoggedOn?: string;
   initialRow?: number;
   initialPercent?: number;
+  initialMemo?: string;
+  existingPhotoUrl?: string;
+  existingPhotoStoragePath?: string;
   onSubmit: (values: QuickLogValues) => Promise<void> | void;
   onCancel?: () => void;
+  onDelete?: () => void;
   isSubmitting?: boolean;
+  isDeleting?: boolean;
+  submitLabel?: string;
+  eyebrow?: string;
+  /** 같은 화면에 폼이 둘일 때 input id가 겹치지 않게 한다. */
+  idPrefix?: string;
 };
 
 /**
- * 단수·진행률·사진·메모로 작업 기록을 남긴다.
+ * 날짜 값을 type=date 입력에 맞는 YYYY-MM-DD로 맞춘다.
+ */
+const toDateInputValue = (value?: string) => {
+  if (!value) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return value.slice(0, 10);
+};
+
+/**
+ * 단수·진행률·사진·메모로 작업 기록을 남기거나 고친다.
  */
 const QuickLogForm = ({
   projectTitle,
+  initialLoggedOn,
   initialRow,
   initialPercent,
+  initialMemo = "",
+  existingPhotoUrl,
+  existingPhotoStoragePath,
   onSubmit,
   onCancel,
+  onDelete,
   isSubmitting = false,
+  isDeleting = false,
+  submitLabel = "기록 저장",
+  eyebrow = "작업 기록",
+  idPrefix = "log",
 }: QuickLogFormProps) => {
-  const [loggedOn, setLoggedOn] = useState(
-    () => new Date().toISOString().slice(0, 10)
-  );
+  const [loggedOn, setLoggedOn] = useState(() => toDateInputValue(initialLoggedOn));
   const [currentRow, setCurrentRow] = useState(
     typeof initialRow === "number" ? initialRow : 0
   );
   const [progressPercent, setProgressPercent] = useState(
     typeof initialPercent === "number" ? String(initialPercent) : "0"
   );
-  const [memo, setMemo] = useState("");
+  const [memo, setMemo] = useState(initialMemo);
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
   const previewRef = useRef<string | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const isBusy = isSubmitting || isDeleting;
+  const dateId = `${idPrefix}-date`;
+  const percentId = `${idPrefix}-percent`;
+  const photoId = `${idPrefix}-photo`;
+  const memoId = `${idPrefix}-memo`;
 
   const progressOptions = useMemo(
     () => buildProgressPercentOptions(initialPercent),
@@ -119,27 +153,47 @@ const QuickLogForm = ({
     }
   };
 
+  const handleDelete = async () => {
+    if (!onDelete) {
+      return;
+    }
+
+    setErrorMessage(null);
+    try {
+      await onDelete();
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[작업 기록 삭제 실패]", error);
+      }
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "기록을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요."
+      );
+    }
+  };
+
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-muted-foreground">작업 기록</p>
+          <p className="text-sm text-muted-foreground">{eyebrow}</p>
           <h2 className="text-lg font-medium break-keep">{projectTitle}</h2>
         </div>
         <div className="w-[6.75rem] shrink-0 space-y-1.5">
           <Label
-            htmlFor="log-percent"
+            htmlFor={percentId}
             className="justify-end text-xs text-muted-foreground"
           >
             진행률
           </Label>
           <NativeSelect
-            id="log-percent"
+            id={percentId}
             size="sm"
             className="w-full"
             value={progressPercent}
             onChange={(event) => setProgressPercent(event.target.value)}
-            disabled={isSubmitting}
+            disabled={isBusy}
             aria-label="진행률"
           >
             {progressOptions.map((percent) => (
@@ -154,24 +208,25 @@ const QuickLogForm = ({
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
 
       <div className="space-y-2">
-        <Label htmlFor="log-date">날짜</Label>
+        <Label htmlFor={dateId}>날짜</Label>
         <Input
-          id="log-date"
+          id={dateId}
           type="date"
           value={loggedOn}
           onChange={(event) => setLoggedOn(event.target.value)}
-          disabled={isSubmitting}
+          disabled={isBusy}
         />
       </div>
 
       <RowCounter
+        idPrefix={idPrefix}
         value={currentRow}
         onChange={setCurrentRow}
-        disabled={isSubmitting}
+        disabled={isBusy}
       />
 
       <div className="space-y-2">
-        <Label htmlFor="log-photo">사진</Label>
+        <Label htmlFor={photoId}>사진</Label>
         {previewUrl ? (
           <div className="overflow-hidden rounded-lg bg-secondary">
             {/* eslint-disable-next-line @next/next/no-img-element -- 미리보기 URL 대응 */}
@@ -181,15 +236,26 @@ const QuickLogForm = ({
               className="aspect-square w-full object-cover"
             />
           </div>
+        ) : existingPhotoUrl || existingPhotoStoragePath ? (
+          <div className="overflow-hidden rounded-lg bg-secondary">
+            <StorageImage
+              src={existingPhotoUrl}
+              storagePath={existingPhotoStoragePath}
+              resolveUrl={resolveProjectImageUrl}
+              alt=""
+              className="aspect-square w-full object-cover"
+              fallback={null}
+            />
+          </div>
         ) : null}
         <Input
-          id="log-photo"
+          id={photoId}
           type="file"
           accept={YARN_IMAGE_ACCEPT}
           onChange={(event) => {
             replacePhoto(event.target.files?.[0] ?? null);
           }}
-          disabled={isSubmitting}
+          disabled={isBusy}
         />
         <p className="text-xs text-muted-foreground">
           JPEG, PNG, WebP 사진을 올릴 수 있어요. 휴대폰 사진은 자동으로 줄여 저장해요.
@@ -197,13 +263,13 @@ const QuickLogForm = ({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="log-memo">메모</Label>
+        <Label htmlFor={memoId}>메모</Label>
         <Textarea
-          id="log-memo"
+          id={memoId}
           value={memo}
           onChange={(event) => setMemo(event.target.value)}
           placeholder="예: 소매 부분 시작"
-          disabled={isSubmitting}
+          disabled={isBusy}
         />
       </div>
 
@@ -214,22 +280,43 @@ const QuickLogForm = ({
             variant="outline"
             className="flex-1"
             onClick={onCancel}
-            disabled={isSubmitting}
+            disabled={isBusy}
           >
             취소
           </Button>
         ) : null}
-        <Button type="submit" className="flex-1" disabled={isSubmitting}>
+        <Button type="submit" className="flex-1" disabled={isBusy}>
           {isSubmitting ? (
             <>
               <Spinner data-icon="inline-start" />
               저장 중…
             </>
           ) : (
-            "기록 저장"
+            submitLabel
           )}
         </Button>
       </div>
+
+      {onDelete ? (
+        <Button
+          type="button"
+          variant="destructive"
+          className="w-full"
+          onClick={() => {
+            void handleDelete();
+          }}
+          disabled={isBusy}
+        >
+          {isDeleting ? (
+            <>
+              <Spinner data-icon="inline-start" />
+              삭제 중…
+            </>
+          ) : (
+            "기록 삭제"
+          )}
+        </Button>
+      ) : null}
     </form>
   );
 };
