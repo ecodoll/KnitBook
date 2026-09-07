@@ -5,6 +5,7 @@ import type {
   WorkLog,
 } from "@/components/knitbook/types";
 import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
+import { parseGaugeSidecar } from "@/lib/knitbook/projects/gauge";
 import { toNumber } from "@/lib/knitbook/yarns/map-yarn";
 
 export type ProjectRow = {
@@ -126,6 +127,7 @@ const mapProject = (
   const photoRaw = latestPhotoLog?.photo_url;
   const pattern = normalizePatternJoin(row.patterns);
   const patternCoverRaw = pattern?.cover_image_url;
+  const gaugeSidecar = parseGaugeSidecar(row.notes);
 
   return {
     id: row.id,
@@ -149,9 +151,9 @@ const mapProject = (
     startedAt: row.started_at ?? undefined,
     targetDate: row.target_date ?? undefined,
     completedAt: row.completed_at ?? undefined,
-    notes: row.notes ?? undefined,
-    gaugeStitches: toNumber(row.gauge_stitches),
-    gaugeRows: toNumber(row.gauge_rows),
+    notes: gaugeSidecar.notes ?? undefined,
+    gaugeStitches: toNumber(row.gauge_stitches) ?? gaugeSidecar.gaugeStitches ?? undefined,
+    gaugeRows: toNumber(row.gauge_rows) ?? gaugeSidecar.gaugeRows ?? undefined,
     yarns: (row.project_yarns ?? []).map(mapProjectYarn),
   };
 };
