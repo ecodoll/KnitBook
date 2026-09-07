@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import type { Project, ProjectStatus } from "@/components/knitbook/types";
+import type { Project, ProjectStatus, ProjectYarnLink } from "@/components/knitbook/types";
 import ProjectProgress from "@/components/knitbook/projects/ProjectProgress";
 import ProjectStatusBadge from "@/components/knitbook/projects/ProjectStatusBadge";
 import ProjectStatusSelect from "@/components/knitbook/projects/ProjectStatusSelect";
@@ -49,14 +49,34 @@ const formatGaugeSummary = (project: Project) => {
 };
 
 /**
- * 연결된 도안·실을 짧은 링크로 보여 준다.
+ * 실 이름을 한 줄 문구로 만든다. 여러 개면 첫 실과 나머지 개수만 붙인다.
+ */
+const formatYarnLine = (yarns: ProjectYarnLink[]) => {
+  if (yarns.length === 0) {
+    return "없음";
+  }
+
+  const first = [yarns[0].brand, yarns[0].productName, yarns[0].colorName]
+    .filter(Boolean)
+    .join(" · ");
+  if (yarns.length === 1) {
+    return first;
+  }
+
+  return `${first} 외 ${yarns.length - 1}개`;
+};
+
+/**
+ * 연결된 도안·실을 항상 같은 높이의 두 줄로 보여 준다.
  */
 const ProjectLinkedItems = ({ project }: { project: Project }) => {
   const yarns = project.yarns ?? [];
+  const yarnLine = formatYarnLine(yarns);
+  const firstYarn = yarns[0];
 
   return (
-    <dl className="space-y-1.5 rounded-lg bg-secondary/50 px-2.5 py-2">
-      <div className="flex items-center gap-2">
+    <dl className="space-y-1 rounded-lg bg-secondary/50 px-2.5 py-2">
+      <div className="flex h-5 items-center gap-2">
         <dt className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
           <BookOpen className="size-3.5" aria-hidden />
           도안
@@ -73,61 +93,30 @@ const ProjectLinkedItems = ({ project }: { project: Project }) => {
               <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
             </Link>
           ) : (
-            <span className="text-sm text-muted-foreground">없음</span>
+            <span className="block truncate text-sm text-muted-foreground">없음</span>
           )}
         </dd>
       </div>
-      <div className="flex items-start gap-2">
-        <dt className="flex shrink-0 items-center gap-1 pt-0.5 text-xs text-muted-foreground">
+      <div className="flex h-5 items-center gap-2">
+        <dt className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
           <Scissors className="size-3.5" aria-hidden />
           실
         </dt>
         <dd className="min-w-0 flex-1">
-          {yarns.length === 0 ? (
-            <span className="text-sm text-muted-foreground">없음</span>
+          {firstYarn ? (
+            <Link
+              href={`/yarns/${firstYarn.yarnId}`}
+              className="flex items-center gap-1 text-sm hover:underline"
+            >
+              <span className="min-w-0 flex-1 truncate">{yarnLine}</span>
+              <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+            </Link>
           ) : (
-            <ul className="space-y-1">
-              {yarns.map((yarn) => (
-                <li key={yarn.id}>
-                  <Link
-                    href={`/yarns/${yarn.yarnId}`}
-                    className="flex items-center gap-1 text-sm hover:underline"
-                  >
-                    <span className="min-w-0 flex-1 truncate">
-                      {[yarn.brand, yarn.productName, yarn.colorName]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </span>
-                    <ChevronRight
-                      className="size-3.5 shrink-0 text-muted-foreground"
-                      aria-hidden
-                    />
-                  </Link>
-                </li>
-              ))}
-            </ul>
+            <span className="block truncate text-sm text-muted-foreground">{yarnLine}</span>
           )}
         </dd>
       </div>
     </dl>
-  );
-};
-
-type ProjectCoverSlotProps = {
-  children: ReactNode;
-  className?: string;
-};
-
-/**
- * 오른쪽 열 높이만큼 사진을 세로로 채운다.
- */
-const ProjectCoverSlot = ({ children, className }: ProjectCoverSlotProps) => {
-  return (
-    <div className={cn("flex shrink-0 flex-col", className)}>
-      <div className="min-h-0 w-full flex-1 overflow-hidden rounded-lg">
-        {children}
-      </div>
-    </div>
   );
 };
 
@@ -139,7 +128,7 @@ type ProjectMediaLayoutProps = {
 };
 
 /**
- * 사진은 우측 실 항목 높이에 맞추고, 메모는 사진 바로 아래 왼쪽에 둔다.
+ * 정사각형 사진 옆에 제목·도안·실을 두고, 메모는 사진 바로 아래 왼쪽에 둔다.
  */
 const ProjectMediaLayout = ({
   cover,
@@ -149,9 +138,9 @@ const ProjectMediaLayout = ({
 }: ProjectMediaLayoutProps) => {
   return (
     <div className="px-(--card-spacing) pt-3">
-      <div className="flex items-stretch gap-3">
+      <div className="flex items-start gap-3">
         {cover}
-        <div className="flex min-w-0 flex-1 flex-col gap-2">{children}</div>
+        <div className="min-w-0 flex-1 space-y-1">{children}</div>
       </div>
       {memo ? (
         <p className={cn("mt-2 text-left whitespace-pre-wrap", memoClassName)}>
@@ -182,6 +171,9 @@ const ProjectCard = ({
   const rowSummary = formatRowSummary(project);
   const gaugeSummary = formatGaugeSummary(project);
   const memo = project.notes || (!isDetail ? project.lastNote : undefined);
+  const metaLine = [rowSummary, lastWorkedLabel ? `마지막 작업 ${lastWorkedLabel}` : null]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <Card size="sm" className={cn("gap-0 pt-0", className)}>
@@ -196,13 +188,16 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-4 text-sm"
           cover={
-            <ProjectCoverSlot className="w-28 min-h-28 sm:w-32 sm:min-h-32">
-              <ProjectCover project={project} className="h-full w-full rounded-lg" />
-            </ProjectCoverSlot>
+            <ProjectCover
+              project={project}
+              className="size-28 shrink-0 sm:size-32"
+            />
           }
         >
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-base leading-snug">{project.title}</CardTitle>
+          <div className="flex h-6 items-center justify-between gap-2">
+            <CardTitle className="min-w-0 truncate text-base leading-none">
+              {project.title}
+            </CardTitle>
             {onStatusChange ? (
               <ProjectStatusSelect
                 status={project.status}
@@ -211,12 +206,9 @@ const ProjectCard = ({
               />
             ) : null}
           </div>
-          {rowSummary ? (
-            <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
-          ) : null}
-          {gaugeSummary ? (
-            <p className="text-xs text-muted-foreground">{gaugeSummary}</p>
-          ) : null}
+          <p className="h-4 truncate text-xs text-muted-foreground tabular-nums">
+            {[rowSummary, gaugeSummary].filter(Boolean).join(" · ") || "\u00a0"}
+          </p>
           <ProjectLinkedItems project={project} />
         </ProjectMediaLayout>
       ) : (
@@ -224,41 +216,34 @@ const ProjectCard = ({
           memo={memo}
           memoClassName="line-clamp-3 text-sm text-muted-foreground"
           cover={
-            <ProjectCoverSlot className="w-20 min-h-20">
-              <Link href={`/projects/${project.id}`} className="block h-full w-full">
-                <ProjectCover project={project} className="h-full w-full" />
-              </Link>
-            </ProjectCoverSlot>
+            <Link href={`/projects/${project.id}`} className="shrink-0">
+              <ProjectCover project={project} className="size-20" />
+            </Link>
           }
         >
-          <div className="flex items-start gap-2">
-            <Link href={`/projects/${project.id}`} className="min-w-0 flex-1 space-y-1">
-              <CardTitle className="line-clamp-2 hover:underline">
+          <div className="flex h-6 items-center gap-2">
+            <Link href={`/projects/${project.id}`} className="min-w-0 flex-1">
+              <CardTitle className="truncate leading-none hover:underline">
                 {project.title}
               </CardTitle>
-              {rowSummary ? (
-                <p className="text-xs text-muted-foreground tabular-nums">{rowSummary}</p>
-              ) : null}
-              {lastWorkedLabel ? (
-                <p className="text-xs text-muted-foreground">
-                  마지막 작업 {lastWorkedLabel}
-                </p>
-              ) : null}
             </Link>
-            <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <div className="flex shrink-0 items-center gap-1.5">
               <ProjectStatusBadge status={project.status} />
               {onQuickLog ? (
                 <button
                   type="button"
-                  className={cn(buttonVariants({ variant: "secondary", size: "icon-sm" }))}
+                  className={cn(buttonVariants({ variant: "secondary", size: "icon-xs" }))}
                   aria-label={`${project.title} 작업 기록`}
                   onClick={() => onQuickLog(project.id)}
                 >
-                  <Plus className="size-5" />
+                  <Plus className="size-4" />
                 </button>
               ) : null}
             </div>
           </div>
+          <p className="h-4 truncate text-xs text-muted-foreground tabular-nums">
+            {metaLine || "\u00a0"}
+          </p>
           <ProjectLinkedItems project={project} />
         </ProjectMediaLayout>
       )}
