@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,10 +11,8 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
-import {
-  formatWorkDurationLabel,
-  WORK_LOG_DURATION_MINUTES,
-} from "@/lib/knitbook/projects/constants";
+import RowCounter from "@/components/knitbook/projects/RowCounter";
+import { buildProgressPercentOptions } from "@/lib/knitbook/projects/constants";
 import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 
 export type QuickLogValues = {
@@ -36,7 +34,7 @@ type QuickLogFormProps = {
 };
 
 /**
- * 뜨개를 멈출 때 단수·시간·사진·메모를 기록한다.
+ * 단수·진행률·사진·메모로 작업 기록을 남긴다.
  */
 const QuickLogForm = ({
   projectTitle,
@@ -49,16 +47,22 @@ const QuickLogForm = ({
   const [loggedOn, setLoggedOn] = useState(
     () => new Date().toISOString().slice(0, 10)
   );
-  const [currentRow, setCurrentRow] = useState(initialRow?.toString() ?? "");
-  const [progressPercent, setProgressPercent] = useState(
-    initialPercent?.toString() ?? ""
+  const [currentRow, setCurrentRow] = useState(
+    typeof initialRow === "number" ? initialRow : 0
   );
-  const [durationMinutes, setDurationMinutes] = useState("");
+  const [progressPercent, setProgressPercent] = useState(
+    typeof initialPercent === "number" ? String(initialPercent) : "0"
+  );
   const [memo, setMemo] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
   const previewRef = useRef<string | undefined>(undefined);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const progressOptions = useMemo(
+    () => buildProgressPercentOptions(initialPercent),
+    [initialPercent]
+  );
 
   useEffect(() => {
     return () => {
@@ -87,20 +91,7 @@ const QuickLogForm = ({
     event.preventDefault();
     setErrorMessage(null);
 
-    const rowValue = currentRow ? Number(currentRow) : null;
     const percentValue = progressPercent ? Number(progressPercent) : null;
-    const durationValue = durationMinutes ? Number(durationMinutes) : null;
-
-    if (
-      rowValue === null &&
-      percentValue === null &&
-      durationValue === null &&
-      !memo.trim() &&
-      !photo
-    ) {
-      setErrorMessage("단수, 진행률, 시간, 메모, 사진 중 하나 이상 입력해 주세요.");
-      return;
-    }
 
     if (!loggedOn) {
       setErrorMessage("기록 날짜를 선택해 주세요.");
@@ -110,9 +101,9 @@ const QuickLogForm = ({
     try {
       await onSubmit({
         loggedOn,
-        currentRow: Number.isFinite(rowValue) ? rowValue : null,
+        currentRow,
         progressPercent: Number.isFinite(percentValue) ? percentValue : null,
-        durationMinutes: Number.isFinite(durationValue) ? durationValue : null,
+        durationMinutes: null,
         memo: memo.trim(),
         photo,
       });
@@ -130,9 +121,34 @@ const QuickLogForm = ({
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <div>
-        <p className="text-sm text-muted-foreground">작업 기록</p>
-        <h2 className="text-lg font-medium">{projectTitle}</h2>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm text-muted-foreground">작업 기록</p>
+          <h2 className="text-lg font-medium break-keep">{projectTitle}</h2>
+        </div>
+        <div className="w-[6.75rem] shrink-0 space-y-1.5">
+          <Label
+            htmlFor="log-percent"
+            className="justify-end text-xs text-muted-foreground"
+          >
+            진행률
+          </Label>
+          <NativeSelect
+            id="log-percent"
+            size="sm"
+            className="w-full"
+            value={progressPercent}
+            onChange={(event) => setProgressPercent(event.target.value)}
+            disabled={isSubmitting}
+            aria-label="진행률"
+          >
+            {progressOptions.map((percent) => (
+              <NativeSelectOption key={percent} value={String(percent)}>
+                {percent}%
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
       </div>
 
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}
@@ -148,53 +164,11 @@ const QuickLogForm = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="log-row">현재 단수</Label>
-          <Input
-            id="log-row"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={currentRow}
-            onChange={(event) => setCurrentRow(event.target.value)}
-            placeholder="예: 48"
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="log-percent">진행률 (%)</Label>
-          <Input
-            id="log-percent"
-            type="number"
-            min={0}
-            max={100}
-            inputMode="numeric"
-            value={progressPercent}
-            onChange={(event) => setProgressPercent(event.target.value)}
-            placeholder="예: 42"
-            disabled={isSubmitting}
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="log-duration">소요 시간</Label>
-        <NativeSelect
-          id="log-duration"
-          className="w-full"
-          value={durationMinutes}
-          onChange={(event) => setDurationMinutes(event.target.value)}
-          disabled={isSubmitting}
-        >
-          <NativeSelectOption value="">선택 안 함</NativeSelectOption>
-          {WORK_LOG_DURATION_MINUTES.map((minutes) => (
-            <NativeSelectOption key={minutes} value={String(minutes)}>
-              {formatWorkDurationLabel(minutes)}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-      </div>
+      <RowCounter
+        value={currentRow}
+        onChange={setCurrentRow}
+        disabled={isSubmitting}
+      />
 
       <div className="space-y-2">
         <Label htmlFor="log-photo">사진</Label>

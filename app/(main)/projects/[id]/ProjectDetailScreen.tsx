@@ -192,10 +192,6 @@ const ProjectDetailScreen = ({
       />
 
       <Card size="sm">
-        <CardHeader>
-          <CardTitle>작업 기록</CardTitle>
-          <CardDescription>뜨개를 멈출 때 단수와 메모를 남겨요.</CardDescription>
-        </CardHeader>
         <CardContent>
           <QuickLogForm
             projectTitle={project.title}

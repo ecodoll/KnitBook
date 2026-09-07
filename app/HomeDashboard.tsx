@@ -205,7 +205,7 @@ const HomeDashboard = ({
           <DialogHeader className="sr-only">
             <DialogTitle>작업 기록</DialogTitle>
             <DialogDescription>
-              현재 단수와 진행률을 빠르게 남깁니다.
+              단수와 진행률을 빠르게 남깁니다.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[80vh] overflow-y-auto p-5">
