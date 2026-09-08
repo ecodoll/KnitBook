@@ -2,6 +2,7 @@ import { createBrowserClient } from "@supabase/ssr";
 
 /**
  * 클라이언트 컴포넌트용 Supabase 브라우저 클라이언트를 생성한다.
+ * createBrowserClient는 브라우저에서 같은 인스턴스를 재사용한다.
  */
 const createClient = () => {
   return createBrowserClient(
