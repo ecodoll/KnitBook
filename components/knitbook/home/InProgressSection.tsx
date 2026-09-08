@@ -38,7 +38,7 @@ const InProgressSection = ({
 
   return (
     <section className="space-y-2" aria-labelledby="in-progress-heading">
-      <HomeSectionHeader id="in-progress-heading" title="진행 중인 작품" icon={Layers}>
+      <HomeSectionHeader id="in-progress-heading" title="작품" icon={Layers}>
         <Button
           variant="ghost"
           size="icon-xs"
