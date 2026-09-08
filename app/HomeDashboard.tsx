@@ -8,6 +8,7 @@ import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
 import YarnSummarySection from "@/components/knitbook/home/YarnSummarySection";
 import {
+  HOME_PATTERN_VISIBLE_LIMIT,
   HOME_PROJECT_VISIBLE_LIMIT,
   sortProjectsByLatestWork,
 } from "@/components/knitbook/home/constants";
@@ -20,6 +21,7 @@ import type {
   YarnInventorySummary,
 } from "@/components/knitbook/types";
 import { fetchProjects, saveWorkLog } from "@/lib/knitbook/project-client";
+import { fetchPatterns } from "@/lib/knitbook/pattern-client";
 import { fetchYarns } from "@/lib/knitbook/yarn-client";
 import { buildYarnInventorySummary } from "@/lib/knitbook/yarns/summary";
 import {
@@ -35,6 +37,7 @@ type HomeDashboardProps = {
   initialProjects: Project[];
   initialProjectsError?: string | null;
   initialPatterns: Pattern[];
+  initialPatternsError?: string | null;
   initialYarnSummary: YarnInventorySummary;
   initialYarnsError?: string | null;
 };
@@ -47,6 +50,13 @@ const takeLatestProjects = (items: Project[]) => {
 };
 
 /**
+ * 최근 연 순으로 홈에 보여줄 도안만 남긴다.
+ */
+const takeLatestPatterns = (items: Pattern[]) => {
+  return items.slice(0, HOME_PATTERN_VISIBLE_LIMIT);
+};
+
+/**
  * 홈 대시보드(인사·작품·도안·실·AI 안내)를 조립한다.
  */
 const HomeDashboard = ({
@@ -54,6 +64,7 @@ const HomeDashboard = ({
   initialProjects,
   initialProjectsError,
   initialPatterns,
+  initialPatternsError,
   initialYarnSummary,
   initialYarnsError,
 }: HomeDashboardProps) => {
@@ -67,6 +78,16 @@ const HomeDashboard = ({
   );
   const [isLoadingProjects, setIsLoadingProjects] = useState(
     initialProjects.length === 0 && !initialProjectsError
+  );
+  const [patternsSource, setPatternsSource] = useState(initialPatterns);
+  const [patterns, setPatterns] = useState(() =>
+    takeLatestPatterns(initialPatterns)
+  );
+  const [patternsError, setPatternsError] = useState<string | null>(
+    initialPatternsError ?? null
+  );
+  const [isLoadingPatterns, setIsLoadingPatterns] = useState(
+    initialPatterns.length === 0
   );
   const [yarnsSource, setYarnsSource] = useState(initialYarnSummary);
   const [yarnSummary, setYarnSummary] = useState(initialYarnSummary);
@@ -85,6 +106,13 @@ const HomeDashboard = ({
     setProjects(takeLatestProjects(initialProjects));
     setProjectsError(initialProjectsError ?? null);
     setIsLoadingProjects(initialProjects.length === 0 && !initialProjectsError);
+  }
+
+  if (initialPatterns !== patternsSource) {
+    setPatternsSource(initialPatterns);
+    setPatterns(takeLatestPatterns(initialPatterns));
+    setPatternsError(initialPatternsError ?? null);
+    setIsLoadingPatterns(initialPatterns.length === 0);
   }
 
   if (initialYarnSummary !== yarnsSource) {
@@ -114,6 +142,25 @@ const HomeDashboard = ({
   }, []);
 
   /**
+   * 도안 탭과 같은 클라이언트 조회로 홈 도안을 다시 채운다.
+   */
+  const reloadPatterns = useCallback(async () => {
+    setIsLoadingPatterns(true);
+    setPatternsError(null);
+    try {
+      const next = await fetchPatterns();
+      setPatterns(takeLatestPatterns(next));
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[홈 도안 다시 불러오기 실패]", error);
+      }
+      setPatternsError("도안을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsLoadingPatterns(false);
+    }
+  }, []);
+
+  /**
    * 실 탭과 같은 클라이언트 조회로 홈 요약을 다시 채운다.
    */
   const reloadYarns = useCallback(async () => {
@@ -131,6 +178,44 @@ const HomeDashboard = ({
       setIsLoadingYarns(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (initialPatterns.length > 0) {
+      return;
+    }
+
+    let cancelled = false;
+    setIsLoadingPatterns(true);
+    setPatternsError(null);
+
+    const load = async () => {
+      try {
+        const next = await fetchPatterns();
+        if (cancelled) {
+          return;
+        }
+        setPatterns(takeLatestPatterns(next));
+        setPatternsError(null);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        if (process.env.NODE_ENV === "development") {
+          console.error("[홈 도안 다시 불러오기 실패]", error);
+        }
+        setPatternsError("도안을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPatterns(false);
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialPatterns.length]);
 
   useEffect(() => {
     if (initialYarnSummary.totalKinds > 0 || initialYarnsError) {
@@ -260,7 +345,14 @@ const HomeDashboard = ({
         onQuickLog={(projectId) => openQuickLog(projectId)}
       />
 
-      <RecentPatternsSection patterns={initialPatterns} />
+      <RecentPatternsSection
+        patterns={patterns}
+        isLoading={isLoadingPatterns}
+        errorMessage={patternsError}
+        onRetry={() => {
+          void reloadPatterns();
+        }}
+      />
 
       <YarnSummarySection
         summary={yarnSummary}

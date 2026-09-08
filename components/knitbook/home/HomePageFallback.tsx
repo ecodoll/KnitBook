@@ -11,7 +11,7 @@ const HomePageFallback = () => {
     <div className="space-y-4 pb-2">
       <Skeleton className="h-7 w-48" />
       <section className="space-y-2">
-        <HomeSectionHeader id="in-progress-heading" title="진행 중인 작품" icon={Layers} />
+        <HomeSectionHeader id="in-progress-heading" title="작품" icon={Layers} />
         <LoadingState
           variant="tiles"
           rows={4}
@@ -19,11 +19,11 @@ const HomePageFallback = () => {
         />
       </section>
       <section className="space-y-2">
-        <HomeSectionHeader id="recent-patterns-heading" title="최근 도안" icon={BookOpen} />
+        <HomeSectionHeader id="recent-patterns-heading" title="도안" icon={BookOpen} />
         <LoadingState variant="strip" rows={5} />
       </section>
       <section className="space-y-2">
-        <HomeSectionHeader id="yarn-summary-heading" title="내 실" icon={Scissors} />
+        <HomeSectionHeader id="yarn-summary-heading" title="실" icon={Scissors} />
         <LoadingState rows={1} />
       </section>
     </div>

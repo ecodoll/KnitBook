@@ -18,7 +18,7 @@ type RecentPatternsSectionProps = {
 };
 
 /**
- * 홈의 최근 도안을 작은 썸네일로 가로 나열한다.
+ * 홈의 도안을 작은 썸네일로 가로 나열한다.
  */
 const RecentPatternsSection = ({
   patterns,
@@ -30,7 +30,7 @@ const RecentPatternsSection = ({
 
   return (
     <section className="space-y-2" aria-labelledby="recent-patterns-heading">
-      <HomeSectionHeader id="recent-patterns-heading" title="최근 도안" icon={BookOpen}>
+      <HomeSectionHeader id="recent-patterns-heading" title="도안" icon={BookOpen}>
         <Button
           variant="ghost"
           size="xs"
