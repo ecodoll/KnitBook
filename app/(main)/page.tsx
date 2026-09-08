@@ -28,6 +28,7 @@ const HomeDashboardLoader = async () => {
       initialProjectsError={dashboard.projectsError}
       initialPatterns={dashboard.patterns}
       initialYarnSummary={dashboard.yarnSummary}
+      initialYarnsError={dashboard.yarnsError}
     />
   );
 };

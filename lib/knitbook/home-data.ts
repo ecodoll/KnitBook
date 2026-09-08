@@ -13,12 +13,11 @@ import {
 import {
   HOME_PATTERN_VISIBLE_LIMIT,
   HOME_PROJECT_VISIBLE_LIMIT,
-  HOME_YARN_THUMB_LIMIT,
   sortProjectsByLatestWork,
 } from "@/components/knitbook/home/constants";
 import { getProjectsPageData } from "@/lib/knitbook/project-data";
-import { LOW_STOCK_GRAMS, YARN_SELECT } from "@/lib/knitbook/yarns/constants";
-import { mapYarn, type YarnRow } from "@/lib/knitbook/yarns/map-yarn";
+import { getYarnsPageData } from "@/lib/knitbook/yarn-data";
+import { buildYarnInventorySummary } from "@/lib/knitbook/yarns/summary";
 import { createClient } from "@/lib/supabase/server";
 
 export type HomeDashboardData = {
@@ -27,9 +26,8 @@ export type HomeDashboardData = {
   projectsError: string | null;
   patterns: Pattern[];
   yarnSummary: YarnInventorySummary;
+  yarnsError: string | null;
 };
-
-const RECENT_YARN_LIMIT = HOME_YARN_THUMB_LIMIT;
 
 type SupabaseLikeError = {
   code?: string;
@@ -83,6 +81,28 @@ const loadHomeProjects = async (): Promise<{
 };
 
 /**
+ * 실 탭과 같은 목록을 읽어 홈 요약을 만든다.
+ */
+const loadHomeYarns = async (): Promise<{
+  summary: YarnInventorySummary;
+  errorMessage: string | null;
+}> => {
+  try {
+    const data = await getYarnsPageData();
+    return {
+      summary: buildYarnInventorySummary(data?.yarns ?? []),
+      errorMessage: null,
+    };
+  } catch (error) {
+    console.error("[홈 실 조회 실패]", error);
+    return {
+      summary: buildYarnInventorySummary([]),
+      errorMessage: "실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+    };
+  }
+};
+
+/**
  * 로그인한 사용자의 홈 대시보드 데이터를 불러온다.
  */
 const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> => {
@@ -97,11 +117,12 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
   const [
     headerUser,
     projectResult,
+    yarnResult,
     { data: patternRows, error: patternsError },
-    { data: yarnRows, error: yarnsError },
   ] = await Promise.all([
     getAppHeaderUser(),
     loadHomeProjects(),
+    loadHomeYarns(),
     supabase
       .from("patterns")
       .select(
@@ -111,11 +132,6 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
       .order("last_opened_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(HOME_PATTERN_VISIBLE_LIMIT),
-    supabase
-      .from("yarns")
-      .select(YARN_SELECT)
-      .eq("user_id", user.id)
-      .order("updated_at", { ascending: false }),
   ]);
 
   if (!headerUser) {
@@ -125,44 +141,18 @@ const getHomeDashboardData = cache(async (): Promise<HomeDashboardData | null> =
   if (patternsError && process.env.NODE_ENV === "development") {
     console.error("[도안 조회 실패]", formatSupabaseError(patternsError));
   }
-  if (yarnsError && process.env.NODE_ENV === "development") {
-    console.error("[실 조회 실패]", formatSupabaseError(yarnsError));
-  }
 
-  const projects = projectResult.projects;
-  const projectsError = projectResult.errorMessage;
-
-  // 표지·실 사진 서명은 카드에서 처리해 홈 전환을 막지 않는다.
   const patterns = ((patternRows ?? []) as PatternRow[]).map((row) =>
     mapPattern(row)
   );
-  const yarns = ((yarnRows ?? []) as YarnRow[]).map((row) => mapYarn(row));
-  const recentYarns = yarns.slice(0, RECENT_YARN_LIMIT);
-
-  const totalRemainingGrams = yarns.reduce((sum, yarn) => {
-    return sum + (yarn.remainingGrams ?? 0);
-  }, 0);
-
-  const lowStockCount = yarns.filter((yarn) => {
-    return (
-      typeof yarn.remainingGrams === "number" &&
-      yarn.remainingGrams < LOW_STOCK_GRAMS
-    );
-  }).length;
-
-  const yarnSummary: YarnInventorySummary = {
-    totalKinds: yarns.length,
-    totalRemainingGrams: yarns.length > 0 ? totalRemainingGrams : undefined,
-    lowStockCount,
-    recentYarns,
-  };
 
   return {
     user: headerUser,
-    projects,
-    projectsError,
+    projects: projectResult.projects,
+    projectsError: projectResult.errorMessage,
     patterns,
-    yarnSummary,
+    yarnSummary: yarnResult.summary,
+    yarnsError: yarnResult.errorMessage,
   };
 });
 

@@ -20,6 +20,8 @@ import type {
   YarnInventorySummary,
 } from "@/components/knitbook/types";
 import { fetchProjects, saveWorkLog } from "@/lib/knitbook/project-client";
+import { fetchYarns } from "@/lib/knitbook/yarn-client";
+import { buildYarnInventorySummary } from "@/lib/knitbook/yarns/summary";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +36,7 @@ type HomeDashboardProps = {
   initialProjectsError?: string | null;
   initialPatterns: Pattern[];
   initialYarnSummary: YarnInventorySummary;
+  initialYarnsError?: string | null;
 };
 
 /**
@@ -52,6 +55,7 @@ const HomeDashboard = ({
   initialProjectsError,
   initialPatterns,
   initialYarnSummary,
+  initialYarnsError,
 }: HomeDashboardProps) => {
   const router = useRouter();
   const [projectsSource, setProjectsSource] = useState(initialProjects);
@@ -64,6 +68,14 @@ const HomeDashboard = ({
   const [isLoadingProjects, setIsLoadingProjects] = useState(
     initialProjects.length === 0 && !initialProjectsError
   );
+  const [yarnsSource, setYarnsSource] = useState(initialYarnSummary);
+  const [yarnSummary, setYarnSummary] = useState(initialYarnSummary);
+  const [yarnsError, setYarnsError] = useState<string | null>(
+    initialYarnsError ?? null
+  );
+  const [isLoadingYarns, setIsLoadingYarns] = useState(
+    initialYarnSummary.totalKinds === 0 && !initialYarnsError
+  );
   const [logOpen, setLogOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isSavingLog, setIsSavingLog] = useState(false);
@@ -73,6 +85,13 @@ const HomeDashboard = ({
     setProjects(takeLatestProjects(initialProjects));
     setProjectsError(initialProjectsError ?? null);
     setIsLoadingProjects(initialProjects.length === 0 && !initialProjectsError);
+  }
+
+  if (initialYarnSummary !== yarnsSource) {
+    setYarnsSource(initialYarnSummary);
+    setYarnSummary(initialYarnSummary);
+    setYarnsError(initialYarnsError ?? null);
+    setIsLoadingYarns(initialYarnSummary.totalKinds === 0 && !initialYarnsError);
   }
 
   /**
@@ -93,6 +112,61 @@ const HomeDashboard = ({
       setIsLoadingProjects(false);
     }
   }, []);
+
+  /**
+   * 실 탭과 같은 클라이언트 조회로 홈 요약을 다시 채운다.
+   */
+  const reloadYarns = useCallback(async () => {
+    setIsLoadingYarns(true);
+    setYarnsError(null);
+    try {
+      const next = await fetchYarns();
+      setYarnSummary(buildYarnInventorySummary(next));
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[홈 실 다시 불러오기 실패]", error);
+      }
+      setYarnsError("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setIsLoadingYarns(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (initialYarnSummary.totalKinds > 0 || initialYarnsError) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const next = await fetchYarns();
+        if (cancelled) {
+          return;
+        }
+        setYarnSummary(buildYarnInventorySummary(next));
+        setYarnsError(null);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+        if (process.env.NODE_ENV === "development") {
+          console.error("[홈 실 다시 불러오기 실패]", error);
+        }
+        setYarnsError("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      } finally {
+        if (!cancelled) {
+          setIsLoadingYarns(false);
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [initialYarnSummary.totalKinds, initialYarnsError]);
 
   useEffect(() => {
     if (initialProjects.length > 0 || initialProjectsError) {
@@ -188,7 +262,14 @@ const HomeDashboard = ({
 
       <RecentPatternsSection patterns={initialPatterns} />
 
-      <YarnSummarySection summary={initialYarnSummary} />
+      <YarnSummarySection
+        summary={yarnSummary}
+        isLoading={isLoadingYarns}
+        errorMessage={yarnsError}
+        onRetry={() => {
+          void reloadYarns();
+        }}
+      />
 
       <HomeAiTeaser />
 
