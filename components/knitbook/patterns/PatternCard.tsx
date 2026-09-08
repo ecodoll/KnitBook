@@ -1,63 +1,54 @@
 import Link from "next/link";
 import type { Pattern } from "@/components/knitbook/types";
 import PatternCover from "@/components/knitbook/patterns/PatternCover";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 
 type PatternCardProps = {
   pattern: Pattern;
-  /** 홈 등 좁은 그리드용 */
-  compact?: boolean;
   className?: string;
 };
 
 /**
- * 도안 썸네일·제목·난이도를 카드로 표시한다.
+ * 도안 표지를 정사각 격자의 한 칸으로 표시한다.
  */
-const PatternCard = ({ pattern, compact = false, className }: PatternCardProps) => {
+const PatternCard = ({ pattern, className }: PatternCardProps) => {
+  const subtitle = pattern.designer ?? null;
+
   return (
     <Link
       href={`/patterns/${pattern.id}`}
       className={cn(
-        "group block overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 transition-shadow hover:shadow-sm",
+        "group relative block aspect-square w-full overflow-hidden bg-muted outline-none focus-visible:z-10 focus-visible:ring-3 focus-visible:ring-ring/60",
         className
       )}
+      aria-label={`${pattern.title}${subtitle ? ` · ${subtitle}` : ""}`}
     >
-      <div
-        className={cn(
-          "relative flex items-center justify-center bg-secondary",
-          compact ? "aspect-[3/4]" : "aspect-[4/3]"
-        )}
-      >
+      <div className="absolute inset-0 flex items-center justify-center bg-secondary">
         <PatternCover
           patternId={pattern.id}
           title={pattern.title}
           coverImageUrl={pattern.coverImageUrl}
           coverStoragePath={pattern.coverStoragePath}
           pdfStoragePath={pattern.pdfStoragePath}
-          compact={compact}
+          compact
         />
-        {pattern.isFavorite ? (
-          <span className="absolute top-2 right-2 rounded-full bg-card/90 p-1 text-brand-berry">
-            <Heart className="size-3.5 fill-current" aria-label="즐겨찾기" />
+      </div>
+      {pattern.isFavorite ? (
+        <span className="absolute top-1.5 right-1.5 rounded-full bg-black/45 p-1 text-white">
+          <Heart className="size-3 fill-current" aria-hidden />
+        </span>
+      ) : null}
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1.5 text-left">
+        <span className="line-clamp-1 text-[11px] font-medium text-white">
+          {pattern.title}
+        </span>
+        {subtitle ? (
+          <span className="line-clamp-1 text-[10px] text-white/80">
+            {subtitle}
           </span>
         ) : null}
-      </div>
-      <div className={cn("space-y-1 p-3", compact && "p-2.5")}>
-        <p className="line-clamp-2 text-sm font-medium text-foreground">
-          {pattern.title}
-        </p>
-        {!compact && pattern.designer ? (
-          <p className="truncate text-xs text-muted-foreground">{pattern.designer}</p>
-        ) : null}
-        {pattern.difficulty ? (
-          <Badge variant="secondary" className="mt-1">
-            난이도 {"★".repeat(pattern.difficulty)}
-            {"☆".repeat(5 - pattern.difficulty)}
-          </Badge>
-        ) : null}
-      </div>
+      </span>
     </Link>
   );
 };

@@ -14,6 +14,8 @@ export { default as PageLoading } from "@/components/knitbook/shared/PageLoading
 export { default as EmptyState } from "@/components/knitbook/shared/EmptyState";
 export { default as ErrorState } from "@/components/knitbook/shared/ErrorState";
 export { default as SearchBar } from "@/components/knitbook/shared/SearchBar";
+export { default as ListToolbar } from "@/components/knitbook/shared/ListToolbar";
+export { default as ListToolbarFallback } from "@/components/knitbook/shared/ListToolbarFallback";
 
 export { default as HomeGreeting } from "@/components/knitbook/home/HomeGreeting";
 export { default as HomeAiTeaser } from "@/components/knitbook/home/HomeAiTeaser";
@@ -35,7 +37,6 @@ export { default as RenamePatternDialog } from "@/components/knitbook/patterns/R
 export { default as ProjectCover } from "@/components/knitbook/projects/ProjectCover";
 export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCard";
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";
-export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";
 export { default as ProjectStatusBadge } from "@/components/knitbook/projects/ProjectStatusBadge";
 export { default as ProjectStatusSelect } from "@/components/knitbook/projects/ProjectStatusSelect";
 export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLogForm";

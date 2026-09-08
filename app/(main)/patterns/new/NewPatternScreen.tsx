@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,9 +41,6 @@ const NewPatternScreen = () => {
       <Card>
         <CardHeader>
           <CardTitle>도안 올리기</CardTitle>
-          <CardDescription>
-            PDF 파일과 기본 정보를 입력하면 목록에 저장돼요.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <PatternUploadForm

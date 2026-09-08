@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -42,9 +41,6 @@ const NewYarnScreen = () => {
       <Card>
         <CardHeader>
           <CardTitle>실 등록</CardTitle>
-          <CardDescription>
-            실 이름과 브랜드, 사진을 입력하면 재고에 저장돼요.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <YarnForm

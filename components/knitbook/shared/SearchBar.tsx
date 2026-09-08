@@ -11,6 +11,7 @@ type SearchBarProps = {
   className?: string;
   /** 접근성용 레이블 */
   label?: string;
+  id?: string;
 };
 
 /**
@@ -22,10 +23,11 @@ const SearchBar = ({
   placeholder = "검색어를 입력하세요",
   className,
   label = "검색",
+  id = "knitbook-search",
 }: SearchBarProps) => {
   return (
     <div className={cn("relative", className)}>
-      <label className="sr-only" htmlFor="knitbook-search">
+      <label className="sr-only" htmlFor={id}>
         {label}
       </label>
       <Search
@@ -33,7 +35,7 @@ const SearchBar = ({
         aria-hidden
       />
       <Input
-        id="knitbook-search"
+        id={id}
         type="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}

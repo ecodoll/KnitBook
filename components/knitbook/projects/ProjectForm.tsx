@@ -87,7 +87,7 @@ const projectToFormValues = (project: Project): ProjectFormValues => {
 };
 
 /**
- * 작품명·도안·실·진행 정보를 입력한다.
+ * 작품명·도안·실·단수 정보를 입력한다.
  */
 const ProjectForm = ({
   patterns,
@@ -252,7 +252,7 @@ const ProjectForm = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="project-row">현재 단수</Label>
           <Input
@@ -274,21 +274,6 @@ const ProjectForm = ({
             inputMode="numeric"
             value={values.totalRows}
             onChange={(event) => updateField("totalRows", event.target.value)}
-            disabled={isSubmitting}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="project-percent">진행률 (%)</Label>
-          <Input
-            id="project-percent"
-            type="number"
-            min={0}
-            max={100}
-            inputMode="numeric"
-            value={values.progressPercent}
-            onChange={(event) =>
-              updateField("progressPercent", event.target.value)
-            }
             disabled={isSubmitting}
           />
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import type { Yarn } from "@/components/knitbook/types";
 import YarnList, {
   type YarnFilterKey,
@@ -9,8 +8,6 @@ import YarnList, {
 import { LOW_STOCK_GRAMS } from "@/lib/knitbook/yarns/constants";
 import { fetchYarns } from "@/lib/knitbook/yarn-client";
 import { showNetworkErrorToast } from "@/lib/knitbook/use-knitbook-toast";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 type YarnsScreenProps = {
   initialYarns: Yarn[];
@@ -90,23 +87,6 @@ const YarnsScreen = ({ initialYarns }: YarnsScreenProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">실</h1>
-          <p className="text-sm text-muted-foreground">
-            보유한 실의 종류와 남은 양을 한곳에서 관리해요.
-          </p>
-        </div>
-        <Button
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/yarns/new" />}
-        >
-          <Plus data-icon="inline-start" />
-          등록
-        </Button>
-      </div>
-
       <YarnList
         yarns={filteredYarns}
         searchQuery={searchQuery}

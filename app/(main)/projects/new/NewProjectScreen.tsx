@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -57,9 +56,6 @@ const NewProjectScreen = ({
       <Card>
         <CardHeader>
           <CardTitle>새 작품</CardTitle>
-          <CardDescription>
-            도안과 사용할 실을 연결하면 진행 상황을 기록할 수 있어요.
-          </CardDescription>
         </CardHeader>
         <CardContent>
           <ProjectForm

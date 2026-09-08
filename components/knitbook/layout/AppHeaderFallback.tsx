@@ -1,4 +1,4 @@
-import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
+import AppHeaderBrand from "@/components/knitbook/layout/AppHeaderBrand";
 import { Skeleton } from "@/components/ui/skeleton";
 
 /**
@@ -8,7 +8,7 @@ const AppHeaderFallback = () => {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4">
-        <KnitBookLogo variant="inline" />
+        <AppHeaderBrand />
         <Skeleton className="size-8 rounded-full" aria-hidden />
         <span className="sr-only">프로필을 불러오는 중이에요…</span>
       </div>

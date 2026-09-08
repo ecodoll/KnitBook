@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
-import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
+import AppHeaderBrand from "@/components/knitbook/layout/AppHeaderBrand";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import { createClient } from "@/lib/supabase/client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -64,7 +64,7 @@ const AppHeader = ({ user }: AppHeaderProps) => {
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-lg items-center justify-between gap-3 px-4">
-        <KnitBookLogo variant="inline" />
+        <AppHeaderBrand />
 
         <DropdownMenu>
           <DropdownMenuTrigger
