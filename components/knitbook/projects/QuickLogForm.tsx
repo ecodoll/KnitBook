@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@/components/ui/native-select";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
 import RowCounter from "@/components/knitbook/projects/RowCounter";
 import StorageImage from "@/components/knitbook/shared/StorageImage";
-import { buildProgressPercentOptions } from "@/lib/knitbook/projects/constants";
 import { resolveProjectImageUrl } from "@/lib/knitbook/project-client";
 import { YARN_IMAGE_ACCEPT } from "@/lib/knitbook/yarns/constants";
 
@@ -56,7 +51,7 @@ const toDateInputValue = (value?: string) => {
 };
 
 /**
- * 단수·진행률·사진·메모로 작업 기록을 남기거나 고친다.
+ * 단수·사진·메모로 작업 기록을 남기거나 고친다.
  */
 const QuickLogForm = ({
   projectTitle,
@@ -79,9 +74,6 @@ const QuickLogForm = ({
   const [currentRow, setCurrentRow] = useState(
     typeof initialRow === "number" ? initialRow : 0
   );
-  const [progressPercent, setProgressPercent] = useState(
-    typeof initialPercent === "number" ? String(initialPercent) : "0"
-  );
   const [memo, setMemo] = useState(initialMemo);
   const [photo, setPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
@@ -89,14 +81,8 @@ const QuickLogForm = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isBusy = isSubmitting || isDeleting;
   const dateId = `${idPrefix}-date`;
-  const percentId = `${idPrefix}-percent`;
   const photoId = `${idPrefix}-photo`;
   const memoId = `${idPrefix}-memo`;
-
-  const progressOptions = useMemo(
-    () => buildProgressPercentOptions(initialPercent),
-    [initialPercent]
-  );
 
   useEffect(() => {
     return () => {
@@ -125,8 +111,6 @@ const QuickLogForm = ({
     event.preventDefault();
     setErrorMessage(null);
 
-    const percentValue = progressPercent ? Number(progressPercent) : null;
-
     if (!loggedOn) {
       setErrorMessage("기록 날짜를 선택해 주세요.");
       return;
@@ -136,7 +120,8 @@ const QuickLogForm = ({
       await onSubmit({
         loggedOn,
         currentRow,
-        progressPercent: Number.isFinite(percentValue) ? percentValue : null,
+        progressPercent:
+          typeof initialPercent === "number" ? initialPercent : null,
         durationMinutes: null,
         memo: memo.trim(),
         photo,
@@ -175,34 +160,9 @@ const QuickLogForm = ({
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit} noValidate>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-sm text-muted-foreground">{eyebrow}</p>
-          <h2 className="text-lg font-medium break-keep">{projectTitle}</h2>
-        </div>
-        <div className="w-[6.75rem] shrink-0 space-y-1.5">
-          <Label
-            htmlFor={percentId}
-            className="justify-end text-xs text-muted-foreground"
-          >
-            진행률
-          </Label>
-          <NativeSelect
-            id={percentId}
-            size="sm"
-            className="w-full"
-            value={progressPercent}
-            onChange={(event) => setProgressPercent(event.target.value)}
-            disabled={isBusy}
-            aria-label="진행률"
-          >
-            {progressOptions.map((percent) => (
-              <NativeSelectOption key={percent} value={String(percent)}>
-                {percent}%
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </div>
+      <div className="min-w-0">
+        <p className="text-sm text-muted-foreground">{eyebrow}</p>
+        <h2 className="text-lg font-medium break-keep">{projectTitle}</h2>
       </div>
 
       {errorMessage ? <ErrorState title="확인이 필요해요" message={errorMessage} /> : null}

@@ -16,22 +16,6 @@ export const WORK_LOG_DURATION_MINUTES = Array.from(
   (_, index) => (index + 1) * 15
 );
 
-/** 작업 기록 카드에서 고르는 진행률(%) 프리셋 */
-export const WORK_LOG_PROGRESS_PERCENTS = [0, 10, 25, 50, 75, 90, 100] as const;
-
-/**
- * 진행률 드롭다운 옵션을 만든다. 현재 값이 프리셋에 없으면 함께 보여 저장 시 값이 바뀌지 않게 한다.
- */
-export const buildProgressPercentOptions = (current?: number) => {
-  const options = new Set<number>(WORK_LOG_PROGRESS_PERCENTS);
-
-  if (typeof current === "number" && Number.isFinite(current)) {
-    options.add(Math.min(100, Math.max(0, Math.round(current))));
-  }
-
-  return [...options].sort((left, right) => left - right);
-};
-
 /**
  * 작업 시간(분)을 드롭다운 라벨로 만든다.
  */

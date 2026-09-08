@@ -46,7 +46,6 @@ const buildLogLabel = (log: WorkLog) => {
   const parts = [
     formatLogDate(log.date),
     typeof log.currentRow === "number" ? `${log.currentRow}단` : null,
-    typeof log.progressPercent === "number" ? `${log.progressPercent}%` : null,
   ].filter(Boolean);
   return `${parts.join(" · ")} 기록 수정`;
 };

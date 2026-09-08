@@ -115,7 +115,7 @@ const ProjectDetailScreen = ({
         <Card>
           <CardHeader>
             <CardTitle>작품 수정</CardTitle>
-            <CardDescription>도안, 실, 진행 정보를 업데이트해요.</CardDescription>
+            <CardDescription>도안, 실, 게이지를 업데이트해요.</CardDescription>
           </CardHeader>
           <CardContent>
             <ProjectForm

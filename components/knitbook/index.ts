@@ -35,7 +35,6 @@ export { default as RenamePatternDialog } from "@/components/knitbook/patterns/R
 export { default as ProjectCover } from "@/components/knitbook/projects/ProjectCover";
 export { default as ProjectCard } from "@/components/knitbook/projects/ProjectCard";
 export { default as ProjectList } from "@/components/knitbook/projects/ProjectList";
-export { default as ProjectProgress } from "@/components/knitbook/projects/ProjectProgress";
 export { default as ProjectStatusBadge } from "@/components/knitbook/projects/ProjectStatusBadge";
 export { default as ProjectStatusSelect } from "@/components/knitbook/projects/ProjectStatusSelect";
 export { default as QuickLogForm } from "@/components/knitbook/projects/QuickLogForm";

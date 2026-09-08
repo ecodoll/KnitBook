@@ -3,7 +3,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Project, ProjectStatus, ProjectYarnLink } from "@/components/knitbook/types";
-import ProjectProgress from "@/components/knitbook/projects/ProjectProgress";
 import ProjectStatusBadge from "@/components/knitbook/projects/ProjectStatusBadge";
 import ProjectStatusSelect from "@/components/knitbook/projects/ProjectStatusSelect";
 import { buttonVariants } from "@/components/ui/button";
@@ -171,7 +170,7 @@ const ProjectMediaLayout = ({
 };
 
 /**
- * 작품 썸네일·진행률·연결 정보를 하나의 카드로 표시한다.
+ * 작품 썸네일·연결 정보를 하나의 카드로 표시한다.
  */
 const ProjectCard = ({
   project,
@@ -185,12 +184,6 @@ const ProjectCard = ({
 
   return (
     <Card size="sm" className={cn("gap-0 pt-0", className)}>
-      <ProjectProgress
-        variant="edge"
-        percent={project.progressPercent}
-        className="shrink-0"
-      />
-
       {isDetail ? (
         <ProjectMediaLayout
           memo={memo}

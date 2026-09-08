@@ -1,8 +1,6 @@
 import Link from "next/link";
 import type { Yarn } from "@/components/knitbook/types";
 import YarnPhoto from "@/components/knitbook/yarns/YarnPhoto";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 type YarnCardProps = {
@@ -11,36 +9,33 @@ type YarnCardProps = {
 };
 
 /**
- * 실 이름·브랜드·색깔·남은 무게를 카드로 표시한다.
+ * 실 사진을 정사각 격자의 한 칸으로 표시한다.
  */
 const YarnCard = ({ yarn, className }: YarnCardProps) => {
   const remaining =
     typeof yarn.remainingGrams === "number" ? `${yarn.remainingGrams}g` : null;
+  const subtitle = [yarn.brand, yarn.colorName].filter(Boolean).join(" · ");
 
   return (
-    <Link href={`/yarns/${yarn.id}`} className={cn("block", className)}>
-      <Card size="sm" className="transition-shadow hover:shadow-sm">
-        <CardHeader className="flex-row items-start gap-3">
-          <YarnPhoto yarn={yarn} />
-          <div className="min-w-0 flex-1 space-y-1">
-            <CardTitle className="line-clamp-1">
-              {yarn.productName}
-            </CardTitle>
-            <p className="truncate text-xs text-muted-foreground">
-              {[yarn.brand, yarn.colorName].filter(Boolean).join(" · ") || "정보 미입력"}
-            </p>
-            <div className="flex flex-wrap gap-1.5 pt-0.5">
-              {remaining ? <Badge variant="secondary">남은 {remaining}</Badge> : null}
-              {yarn.productCode ? (
-                <Badge variant="outline">{yarn.productCode}</Badge>
-              ) : null}
-              {yarn.isInUse ? (
-                <Badge className="bg-brand-berry text-brand-berry-foreground">사용 중</Badge>
-              ) : null}
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+    <Link
+      href={`/yarns/${yarn.id}`}
+      className={cn(
+        "group relative block aspect-square w-full overflow-hidden bg-muted outline-none focus-visible:z-10 focus-visible:ring-3 focus-visible:ring-ring/60",
+        className
+      )}
+      aria-label={`${yarn.productName}${subtitle ? ` · ${subtitle}` : ""}${remaining ? ` · 남은 ${remaining}` : ""}`}
+    >
+      <YarnPhoto yarn={yarn} large className="size-full rounded-none" />
+      <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1.5 text-left">
+        <span className="line-clamp-1 text-[11px] font-medium text-white">
+          {yarn.productName}
+        </span>
+        {remaining || subtitle ? (
+          <span className="line-clamp-1 text-[10px] text-white/80">
+            {[subtitle, remaining].filter(Boolean).join(" · ")}
+          </span>
+        ) : null}
+      </span>
     </Link>
   );
 };

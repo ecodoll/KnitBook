@@ -4,7 +4,6 @@ import Link from "next/link";
 import type { Project } from "@/components/knitbook/types";
 import ProjectCover from "@/components/knitbook/projects/ProjectCover";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import { Plus } from "lucide-react";
 
@@ -15,15 +14,13 @@ type HomeProjectTileProps = {
 };
 
 /**
- * 홈용 작품 타일(사진·막대 게이지·제목)을 표시한다.
+ * 홈용 작품 타일(사진·제목)을 표시한다.
  */
 const HomeProjectTile = ({
   project,
   onQuickLog,
   className,
 }: HomeProjectTileProps) => {
-  const clamped = Math.min(100, Math.max(0, project.progressPercent));
-
   return (
     <div className={cn("relative", className)}>
       <Link
@@ -37,12 +34,7 @@ const HomeProjectTile = ({
             iconClassName="size-5"
           />
         </div>
-        <Progress
-          value={clamped}
-          className="mt-1.5 gap-0"
-          aria-label={`${project.title} 진행률 ${clamped}%`}
-        />
-        <p className="mt-1 truncate text-center text-xs font-medium text-foreground">
+        <p className="mt-1.5 truncate text-center text-xs font-medium text-foreground">
           {project.title}
         </p>
       </Link>
