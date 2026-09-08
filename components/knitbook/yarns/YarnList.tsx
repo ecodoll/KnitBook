@@ -1,15 +1,13 @@
 "use client";
 
-import Link from "next/link";
 import type { Yarn } from "@/components/knitbook/types";
 import YarnCard from "@/components/knitbook/yarns/YarnCard";
 import EmptyState from "@/components/knitbook/shared/EmptyState";
+import ListToolbar from "@/components/knitbook/shared/ListToolbar";
 import LoadingState from "@/components/knitbook/shared/LoadingState";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
-import SearchBar from "@/components/knitbook/shared/SearchBar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Plus } from "lucide-react";
 
 export type YarnFilterKey = "all" | "in_use" | "low_stock";
 
@@ -58,24 +56,7 @@ type YarnListProps = {
 };
 
 /**
- * 실 추가 격자 칸을 표시한다.
- */
-const YarnAddTile = () => {
-  return (
-    <li className="min-w-0">
-      <Link
-        href="/yarns/new"
-        className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground outline-none transition-colors hover:bg-muted/80 hover:text-foreground focus-visible:z-10 focus-visible:ring-3 focus-visible:ring-ring/60"
-        aria-label="실 등록"
-      >
-        <Plus className="size-8" />
-      </Link>
-    </li>
-  );
-};
-
-/**
- * 실 검색·필터·목록을 함께 표시한다.
+ * 실 검색·등록·필터·목록을 함께 표시한다.
  */
 const YarnList = ({
   yarns,
@@ -89,18 +70,20 @@ const YarnList = ({
   className,
 }: YarnListProps) => {
   const isFiltered = Boolean(searchQuery) || activeFilter !== "all";
-  const showEmptyFilter = !isLoading && !errorMessage && yarns.length === 0 && isFiltered;
-  const showGrid = !isLoading && !errorMessage && !showEmptyFilter;
 
   return (
     <div className={cn("space-y-4", className)}>
-      <SearchBar
-        value={searchQuery}
-        onChange={onSearchChange}
-        placeholder="이름, 브랜드, 색깔, 제품번호 검색"
-        label="실 검색"
-      />
-      <YarnFilterBar activeFilter={activeFilter} onFilterChange={onFilterChange} />
+      <ListToolbar
+        searchValue={searchQuery}
+        onSearchChange={onSearchChange}
+        searchPlaceholder="이름, 브랜드, 색깔, 제품번호 검색"
+        searchLabel="실 검색"
+        searchId="yarn-search"
+        actionHref="/yarns/new"
+        actionLabel="등록"
+      >
+        <YarnFilterBar activeFilter={activeFilter} onFilterChange={onFilterChange} />
+      </ListToolbar>
 
       {isLoading ? <LoadingState variant="grid" rows={6} className="-mx-4" /> : null}
 
@@ -112,21 +95,26 @@ const YarnList = ({
         />
       ) : null}
 
-      {showEmptyFilter ? (
+      {!isLoading && !errorMessage && yarns.length === 0 ? (
         <EmptyState
           title="실이 없어요"
-          description="조건에 맞는 실이 없어요. 필터를 바꿔 보세요."
+          description={
+            isFiltered
+              ? "조건에 맞는 실이 없어요. 필터를 바꿔 보세요."
+              : "보유한 실을 등록해 재고를 관리해 보세요."
+          }
+          actionLabel={isFiltered ? undefined : "실 등록하기"}
+          actionHref={isFiltered ? undefined : "/yarns/new"}
         />
       ) : null}
 
-      {showGrid ? (
+      {!isLoading && !errorMessage && yarns.length > 0 ? (
         <ul className="-mx-4 grid grid-cols-3 gap-0.5">
           {yarns.map((yarn) => (
             <li key={yarn.id} className="min-w-0">
               <YarnCard yarn={yarn} />
             </li>
           ))}
-          <YarnAddTile />
         </ul>
       ) : null}
     </div>

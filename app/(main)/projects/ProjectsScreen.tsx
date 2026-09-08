@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Project, ProjectStatus } from "@/components/knitbook/types";
 import ProjectList from "@/components/knitbook/projects/ProjectList";
@@ -13,7 +12,6 @@ import {
   showNetworkErrorToast,
   showSuccessToast,
 } from "@/lib/knitbook/use-knitbook-toast";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus } from "lucide-react";
 
 type ProjectsScreenProps = {
   initialProjects: Project[];
@@ -34,6 +31,7 @@ const ProjectsScreen = ({ initialProjects }: ProjectsScreenProps) => {
   const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [projectsSource, setProjectsSource] = useState(initialProjects);
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeStatus, setActiveStatus] = useState<ProjectStatus | "all">(
     "all"
   );
@@ -64,11 +62,29 @@ const ProjectsScreen = ({ initialProjects }: ProjectsScreenProps) => {
   }, []);
 
   const visibleProjects = useMemo(() => {
-    if (activeStatus === "all") {
-      return projects;
-    }
-    return projects.filter((project) => project.status === activeStatus);
-  }, [projects, activeStatus]);
+    const query = searchQuery.trim().toLowerCase();
+
+    return projects.filter((project) => {
+      if (activeStatus !== "all" && project.status !== activeStatus) {
+        return false;
+      }
+
+      if (!query) {
+        return true;
+      }
+
+      const yarnText = (project.yarns ?? [])
+        .flatMap((yarn) => [yarn.brand, yarn.productName, yarn.colorName])
+        .filter(Boolean)
+        .join(" ");
+      const haystack = [project.title, project.patternTitle, yarnText]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [projects, activeStatus, searchQuery]);
 
   const handleQuickLogSubmit = async (values: QuickLogValues) => {
     if (!activeProject) {
@@ -101,19 +117,10 @@ const ProjectsScreen = ({ initialProjects }: ProjectsScreenProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-end">
-        <Button
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/projects/new" />}
-        >
-          <Plus data-icon="inline-start" />
-          새 작품
-        </Button>
-      </div>
-
       <ProjectList
         projects={visibleProjects}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
         activeStatus={activeStatus}
         onStatusChange={setActiveStatus}
         isLoading={isLoading}

@@ -14,6 +14,8 @@ export { default as PageLoading } from "@/components/knitbook/shared/PageLoading
 export { default as EmptyState } from "@/components/knitbook/shared/EmptyState";
 export { default as ErrorState } from "@/components/knitbook/shared/ErrorState";
 export { default as SearchBar } from "@/components/knitbook/shared/SearchBar";
+export { default as ListToolbar } from "@/components/knitbook/shared/ListToolbar";
+export { default as ListToolbarFallback } from "@/components/knitbook/shared/ListToolbarFallback";
 
 export { default as HomeGreeting } from "@/components/knitbook/home/HomeGreeting";
 export { default as HomeAiTeaser } from "@/components/knitbook/home/HomeAiTeaser";
