@@ -1,13 +1,10 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import type { Pattern } from "@/components/knitbook/types";
 import PatternList from "@/components/knitbook/patterns/PatternList";
 import { fetchPatterns } from "@/lib/knitbook/pattern-client";
 import { showNetworkErrorToast } from "@/lib/knitbook/use-knitbook-toast";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 type PatternsScreenProps = {
   initialPatterns: Pattern[];
@@ -67,33 +64,14 @@ const PatternsScreen = ({ initialPatterns }: PatternsScreenProps) => {
   }, [patterns, searchQuery]);
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">도안</h1>
-          <p className="text-sm text-muted-foreground">
-            PDF 도안을 업로드하고 한곳에서 관리해요.
-          </p>
-        </div>
-        <Button
-          size="sm"
-          nativeButton={false}
-          render={<Link href="/patterns/new" />}
-        >
-          <Plus data-icon="inline-start" />
-          올리기
-        </Button>
-      </div>
-
-      <PatternList
-        patterns={filteredPatterns}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isLoading={isLoading}
-        errorMessage={errorMessage}
-        onRetry={() => void reloadPatterns()}
-      />
-    </div>
+    <PatternList
+      patterns={filteredPatterns}
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      isLoading={isLoading}
+      errorMessage={errorMessage}
+      onRetry={() => void reloadPatterns()}
+    />
   );
 };
 

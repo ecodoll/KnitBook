@@ -87,8 +87,6 @@ const YarnsScreen = ({ initialYarns }: YarnsScreenProps) => {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-lg font-semibold">실</h1>
-
       <YarnList
         yarns={filteredYarns}
         searchQuery={searchQuery}

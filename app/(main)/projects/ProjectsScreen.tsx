@@ -101,13 +101,7 @@ const ProjectsScreen = ({ initialProjects }: ProjectsScreenProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-lg font-semibold">작품</h1>
-          <p className="text-sm text-muted-foreground">
-            진행 중인 작품을 기록하고 도안·실과 연결해요.
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button
           size="sm"
           nativeButton={false}
