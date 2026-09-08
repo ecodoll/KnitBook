@@ -2,6 +2,8 @@
 
 import type { Yarn } from "@/components/knitbook/types";
 import type { YarnFormValues } from "@/components/knitbook/yarns/YarnForm";
+import { requireBrowserUser } from "@/lib/knitbook/auth-client";
+import { retryAsync } from "@/lib/knitbook/retry";
 import {
   buildYarnImagePath,
   mapYarnImageUploadError,
@@ -27,19 +29,10 @@ type YarnWritePayload = {
 
 /**
  * 로그인 사용자 ID를 반환한다. 없으면 오류를 던진다.
+ * 앱을 막 열었을 때는 세션 쿠키 초기화를 기다린다.
  */
 const requireUserId = async () => {
-  const supabase = createClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  if (error || !user) {
-    throw new Error("로그인이 필요해요. 다시 로그인해 주세요.");
-  }
-
-  return { supabase, userId: user.id };
+  return requireBrowserUser();
 };
 
 /**
@@ -209,24 +202,27 @@ const uploadYarnImage = async (
 
 /**
  * 사용자의 실 재고 목록을 조회한다.
+ * 첫 진입 때 세션·네트워크 일시 실패는 짧게 다시 시도한다.
  */
 const fetchYarns = async (): Promise<Yarn[]> => {
   const { supabase, userId } = await requireUserId();
 
-  const { data, error } = await supabase
-    .from("yarns")
-    .select(YARN_SELECT)
-    .eq("user_id", userId)
-    .order("updated_at", { ascending: false });
+  return retryAsync(async () => {
+    const { data, error } = await supabase
+      .from("yarns")
+      .select(YARN_SELECT)
+      .eq("user_id", userId)
+      .order("updated_at", { ascending: false });
 
-  if (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("[실 목록 조회 실패]", error);
+    if (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[실 목록 조회 실패]", error);
+      }
+      throw new Error("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
     }
-    throw new Error("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
-  }
 
-  return ((data ?? []) as YarnRow[]).map((row) => mapYarn(row));
+    return ((data ?? []) as YarnRow[]).map((row) => mapYarn(row));
+  });
 };
 
 /**

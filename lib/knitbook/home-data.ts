@@ -89,8 +89,15 @@ const loadHomeYarns = async (): Promise<{
 }> => {
   try {
     const data = await getYarnsPageData();
+    if (!data) {
+      return {
+        summary: buildYarnInventorySummary([]),
+        errorMessage: "실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      };
+    }
+
     return {
-      summary: buildYarnInventorySummary(data?.yarns ?? []),
+      summary: buildYarnInventorySummary(data.yarns),
       errorMessage: null,
     };
   } catch (error) {

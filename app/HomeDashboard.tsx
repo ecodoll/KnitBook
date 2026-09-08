@@ -95,7 +95,7 @@ const HomeDashboard = ({
     initialYarnsError ?? null
   );
   const [isLoadingYarns, setIsLoadingYarns] = useState(
-    initialYarnSummary.totalKinds === 0 && !initialYarnsError
+    initialYarnSummary.totalKinds === 0
   );
   const [logOpen, setLogOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
@@ -119,7 +119,7 @@ const HomeDashboard = ({
     setYarnsSource(initialYarnSummary);
     setYarnSummary(initialYarnSummary);
     setYarnsError(initialYarnsError ?? null);
-    setIsLoadingYarns(initialYarnSummary.totalKinds === 0 && !initialYarnsError);
+    setIsLoadingYarns(initialYarnSummary.totalKinds === 0);
   }
 
   /**
@@ -216,7 +216,7 @@ const HomeDashboard = ({
   }, [initialPatterns.length]);
 
   useEffect(() => {
-    if (initialYarnSummary.totalKinds > 0 || initialYarnsError) {
+    if (initialYarnSummary.totalKinds > 0) {
       return;
     }
 
@@ -237,7 +237,12 @@ const HomeDashboard = ({
         if (process.env.NODE_ENV === "development") {
           console.error("[홈 실 다시 불러오기 실패]", error);
         }
-        setYarnsError("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        // 서버가 빈 재고를 정상으로 준 경우에는 오류 화면으로 덮지 않는다.
+        if (initialYarnsError) {
+          setYarnsError("실 재고를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+        } else {
+          setYarnsError(null);
+        }
       } finally {
         if (!cancelled) {
           setIsLoadingYarns(false);
