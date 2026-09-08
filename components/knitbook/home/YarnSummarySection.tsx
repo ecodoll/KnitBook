@@ -29,7 +29,7 @@ const YarnSummarySection = ({
 
   return (
     <section className="space-y-2" aria-labelledby="yarn-summary-heading">
-      <HomeSectionHeader id="yarn-summary-heading" title="내 실" icon={Scissors}>
+      <HomeSectionHeader id="yarn-summary-heading" title="실" icon={Scissors}>
         <Button
           variant="ghost"
           size="xs"

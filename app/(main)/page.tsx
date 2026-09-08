@@ -8,7 +8,7 @@ import { getHomeDashboardData } from "@/lib/knitbook/home-data";
 export const metadata: Metadata = {
   title: "홈 | KnitBook",
   description:
-    "진행 중인 작품, 최근 도안, 실 재고를 한눈에 보는 KnitBook 홈입니다.",
+    "작품, 도안, 실 재고를 한눈에 보는 KnitBook 홈입니다.",
 };
 
 /**
@@ -27,7 +27,9 @@ const HomeDashboardLoader = async () => {
       initialProjects={dashboard.projects}
       initialProjectsError={dashboard.projectsError}
       initialPatterns={dashboard.patterns}
+      initialPatternsError={dashboard.patternsError}
       initialYarnSummary={dashboard.yarnSummary}
+      initialYarnsError={dashboard.yarnsError}
     />
   );
 };
