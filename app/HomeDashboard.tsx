@@ -185,8 +185,6 @@ const HomeDashboard = ({
     }
 
     let cancelled = false;
-    setIsLoadingPatterns(true);
-    setPatternsError(null);
 
     const load = async () => {
       try {
