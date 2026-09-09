@@ -22,6 +22,13 @@ const AuthSync = () => {
   const router = useRouter();
 
   useEffect(() => {
+    if (
+      !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    ) {
+      return;
+    }
+
     const supabase = createClient();
 
     const {

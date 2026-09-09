@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import AppHeaderBrand from "@/components/knitbook/layout/AppHeaderBrand";
@@ -94,6 +95,26 @@ const AppHeader = ({ user }: AppHeaderProps) => {
                   </span>
                 </DropdownMenuLabel>
               </DropdownMenuGroup>
+            <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground">
+              <Link
+                href="/privacy"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                개인정보처리방침
+              </Link>
+              <Link
+                href="/terms"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                이용약관
+              </Link>
+              <Link
+                href="/guides"
+                className="underline-offset-4 hover:text-foreground hover:underline"
+              >
+                뜨개 가이드
+              </Link>
+            </div>
             <Button
               type="button"
               variant="default"
