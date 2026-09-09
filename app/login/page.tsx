@@ -2,9 +2,13 @@ import type { Metadata } from "next";
 import LoginScreen from "@/app/login/LoginScreen";
 
 export const metadata: Metadata = {
-  title: "로그인 | KnitBook",
+  title: "로그인",
   description:
     "KnitBook에 로그인하고 도안·작품·실 재고를 한곳에서 관리하세요.",
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 /**

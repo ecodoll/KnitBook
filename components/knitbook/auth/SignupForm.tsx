@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
@@ -33,6 +34,7 @@ const SignupForm = ({
   const [nickname, setNickname] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [agreedToPolicies, setAgreedToPolicies] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -53,6 +55,10 @@ const SignupForm = ({
     }
     if (password !== passwordConfirm) {
       setErrorMessage("비밀번호가 서로 달라요. 다시 확인해 주세요.");
+      return;
+    }
+    if (!agreedToPolicies) {
+      setErrorMessage("이용약관과 개인정보처리방침에 동의해 주세요.");
       return;
     }
 
@@ -145,6 +151,32 @@ const SignupForm = ({
           disabled={isSubmitting}
         />
       </div>
+
+      <label className="flex items-start gap-2 text-sm leading-5 text-muted-foreground">
+        <Checkbox
+          checked={agreedToPolicies}
+          onCheckedChange={(value) => setAgreedToPolicies(value === true)}
+          disabled={isSubmitting}
+          className="mt-0.5"
+          aria-label="이용약관과 개인정보처리방침 동의"
+        />
+        <span>
+          <Link
+            href="/terms"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            이용약관
+          </Link>
+          과{" "}
+          <Link
+            href="/privacy"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            개인정보처리방침
+          </Link>
+          에 동의합니다.
+        </span>
+      </label>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? (

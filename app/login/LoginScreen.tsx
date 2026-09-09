@@ -7,6 +7,8 @@ import LoginForm, {
 } from "@/components/knitbook/auth/LoginForm";
 import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { createClient } from "@/lib/supabase/client";
+import SiteFooter from "@/components/site/SiteFooter";
+import LoginGuideLinks from "@/components/site/LoginGuideLinks";
 import {
   Card,
   CardContent,
@@ -85,13 +87,13 @@ const LoginScreen = () => {
   }
 
   return (
-    <div className="relative flex min-h-full flex-1 flex-col items-center justify-center px-4 py-10">
+    <div className="relative flex min-h-full flex-1 flex-col">
       <div
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.935_0.012_152)_0%,_transparent_55%),radial-gradient(ellipse_at_bottom_right,_oklch(0.945_0.025_8)_0%,_transparent_40%)]"
         aria-hidden
       />
 
-      <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8">
+      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-8 px-4 py-10">
         <div className="flex flex-col items-center gap-3 text-center">
           <KnitBookLogo />
           <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
@@ -115,6 +117,11 @@ const LoginScreen = () => {
             />
           </CardContent>
         </Card>
+
+        <LoginGuideLinks />
+      </div>
+      <div className="relative z-10">
+        <SiteFooter />
       </div>
     </div>
   );
