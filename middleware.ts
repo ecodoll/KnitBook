@@ -34,13 +34,7 @@ const middleware = async (request: NextRequest) => {
   const onAuthPage = isAuthPath(pathname);
 
   if (!hasSupabaseConfig()) {
-    if (pathname === "/") {
-      const url = request.nextUrl.clone();
-      url.pathname = "/welcome";
-      return NextResponse.rewrite(url);
-    }
-
-    if (isProtectedPath(pathname)) {
+    if (pathname === "/" || isProtectedPath(pathname)) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       return NextResponse.redirect(url);
@@ -50,15 +44,9 @@ const middleware = async (request: NextRequest) => {
   }
 
   const { supabaseResponse, user } = await updateSession(request);
-  // 비로그인 홈은 랜딩 콘텐츠를 보여 애드센스 크롤러가 본문을 읽게 한다.
-  if (!user && pathname === "/") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/welcome";
-    return copySessionCookies(supabaseResponse, NextResponse.rewrite(url));
-  }
 
-  // 비로그인 사용자는 앱 기록 페이지 접근 시 로그인으로 보낸다.
-  if (!user && isProtectedPath(pathname)) {
+  // 비로그인 기본 화면은 로그인이다. 가이드는 로그인 화면 버튼으로 연다.
+  if (!user && (pathname === "/" || isProtectedPath(pathname))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url));

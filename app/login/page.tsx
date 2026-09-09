@@ -7,7 +7,7 @@ export const metadata: Metadata = {
     "KnitBook에 로그인하고 도안·작품·실 재고를 한곳에서 관리하세요.",
   robots: {
     index: false,
-    follow: false,
+    follow: true,
   },
 };
 

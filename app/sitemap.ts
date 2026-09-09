@@ -10,19 +10,19 @@ const sitemap = (): MetadataRoute.Sitemap => {
   const lastModified = new Date("2026-09-09");
 
   const staticPaths = [
-    "",
-    "/about",
-    "/guides",
-    "/privacy",
-    "/terms",
-    "/contact",
+    { path: "/guides", changeFrequency: "weekly" as const, priority: 1 },
+    { path: "/welcome", changeFrequency: "monthly" as const, priority: 0.7 },
+    { path: "/about", changeFrequency: "monthly" as const, priority: 0.7 },
+    { path: "/privacy", changeFrequency: "monthly" as const, priority: 0.6 },
+    { path: "/terms", changeFrequency: "monthly" as const, priority: 0.6 },
+    { path: "/contact", changeFrequency: "monthly" as const, priority: 0.6 },
   ];
 
-  const staticEntries = staticPaths.map((path) => ({
-    url: `${siteUrl}${path || "/"}`,
+  const staticEntries = staticPaths.map((entry) => ({
+    url: `${siteUrl}${entry.path}`,
     lastModified,
-    changeFrequency: path === "" ? "weekly" : "monthly",
-    priority: path === "" ? 1 : 0.7,
+    changeFrequency: entry.changeFrequency,
+    priority: entry.priority,
   })) satisfies MetadataRoute.Sitemap;
 
   const guideEntries = getAllGuides().map((guide) => ({

@@ -8,6 +8,7 @@ import LoginForm, {
 import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { createClient } from "@/lib/supabase/client";
 import SiteFooter from "@/components/site/SiteFooter";
+import LoginGuideLinks from "@/components/site/LoginGuideLinks";
 import {
   Card,
   CardContent,
@@ -116,6 +117,8 @@ const LoginScreen = () => {
             />
           </CardContent>
         </Card>
+
+        <LoginGuideLinks />
       </div>
       <div className="relative z-10">
         <SiteFooter />

@@ -10,6 +10,8 @@ export type GuideSection = {
 export type GuideArticle = {
   slug: string;
   title: string;
+  /** 로그인 화면 버튼에 쓰는 짧은 이름 */
+  shortTitle: string;
   description: string;
   publishedAt: string;
   updatedAt: string;
@@ -21,6 +23,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "gauge-swatch",
     title: "게이지 스와치를 뜨는 이유와 실패를 줄이는 방법",
+    shortTitle: "게이지 스와치",
     description:
       "도안 속 게이지가 내 손과 다를 때 작품이 커지거나 작아집니다. 스와치를 뜨고 측정하는 현실적인 순서를 정리했습니다.",
     publishedAt: "2026-09-01",
@@ -55,6 +58,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "read-yarn-label",
     title: "실 라벨 읽는 법: 무게, 길이, 바늘, LOT 번호",
+    shortTitle: "실 라벨 읽기",
     description:
       "실 라벨의 숫자만 알아도 대용 실을 고르고, 같은 색을 추가 구매하고, 재고를 정리하기가 쉬워집니다.",
     publishedAt: "2026-09-02",
@@ -87,6 +91,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "project-journal",
     title: "작품 기록은 단수보다 ‘무엇으로 떴는지’가 중요합니다",
+    shortTitle: "작품 기록",
     description:
       "몇 단까지 떴는지만 적으면 몇 주 뒤 다시 집을 때 막힙니다. 실, 바늘, 변경 사항까지 남기는 짧은 기록 습관을 제안합니다.",
     publishedAt: "2026-09-03",
@@ -120,6 +125,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "yarn-stash-reset",
     title: "집에 쌓인 실을 죄책감 없이 정리하는 순서",
+    shortTitle: "실 재고 정리",
     description:
       "타래를 세는 대신 미터와 상태를 기준으로 재고를 나누면, 다음에 무엇을 살지와 무엇을 뜰지가 분명해집니다.",
     publishedAt: "2026-09-04",
@@ -154,6 +160,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "pattern-pdf-care",
     title: "PDF 도안을 잃어버리지 않는 보관법",
+    shortTitle: "도안 보관",
     description:
       "메일함, 클라우드, 휴대폰 다운로드 폴더에 흩어진 도안을 작품과 연결해 두는 현실적인 방법을 정리했습니다.",
     publishedAt: "2026-09-05",
@@ -187,6 +194,7 @@ export const GUIDES: GuideArticle[] = [
   {
     slug: "beginner-kit",
     title: "처음 뜨개를 시작할 때 사야 할 것과 아직 안 사도 되는 것",
+    shortTitle: "입문 준비물",
     description:
       "초보가 한 번에 공구를 모으려다 지치는 일을 줄이기 위해, 첫 작품 기준으로 준비물을 나눠 보았습니다.",
     publishedAt: "2026-09-06",
