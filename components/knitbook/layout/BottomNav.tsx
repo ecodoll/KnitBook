@@ -4,14 +4,13 @@ import Link, { useLinkStatus } from "next/link";
 import { usePathname } from "next/navigation";
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BookOpen, Home, Layers, Scissors, Sparkles } from "lucide-react";
+import { BookOpen, Home, Layers, Scissors } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "홈", icon: Home },
   { href: "/patterns", label: "도안", icon: BookOpen },
   { href: "/projects", label: "작품", icon: Layers },
   { href: "/yarns", label: "실", icon: Scissors },
-  { href: "/ai", label: "AI", icon: Sparkles },
 ] as const;
 
 type BottomNavItemInnerProps = {
@@ -57,7 +56,7 @@ const BottomNav = () => {
       className="fixed inset-x-0 bottom-0 z-40 w-full border-t border-border bg-card/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
       aria-label="주요 메뉴"
     >
-      <ul className="mx-auto grid h-16 w-full max-w-lg grid-cols-5 px-1">
+      <ul className="mx-auto grid h-16 w-full max-w-lg grid-cols-4 px-1">
         {NAV_ITEMS.map(({ href, label, icon }) => {
           const isActive =
             href === "/"

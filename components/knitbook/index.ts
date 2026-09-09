@@ -18,7 +18,6 @@ export { default as ListToolbar } from "@/components/knitbook/shared/ListToolbar
 export { default as ListToolbarFallback } from "@/components/knitbook/shared/ListToolbarFallback";
 
 export { default as HomeGreeting } from "@/components/knitbook/home/HomeGreeting";
-export { default as HomeAiTeaser } from "@/components/knitbook/home/HomeAiTeaser";
 export { default as InProgressSection } from "@/components/knitbook/home/InProgressSection";
 export { default as HomeMoreTile } from "@/components/knitbook/home/HomeMoreTile";
 export { default as RecentPatternsSection } from "@/components/knitbook/home/RecentPatternsSection";

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import HomeAiTeaser from "@/components/knitbook/home/HomeAiTeaser";
 import HomeGreeting from "@/components/knitbook/home/HomeGreeting";
 import InProgressSection from "@/components/knitbook/home/InProgressSection";
 import RecentPatternsSection from "@/components/knitbook/home/RecentPatternsSection";
@@ -57,7 +56,7 @@ const takeLatestPatterns = (items: Pattern[]) => {
 };
 
 /**
- * 홈 대시보드(인사·작품·도안·실·AI 안내)를 조립한다.
+ * 홈 대시보드(인사·작품·도안·실)를 조립한다.
  */
 const HomeDashboard = ({
   nickname,
@@ -365,8 +364,6 @@ const HomeDashboard = ({
           void reloadYarns();
         }}
       />
-
-      <HomeAiTeaser />
 
       <Dialog
         open={logOpen}
