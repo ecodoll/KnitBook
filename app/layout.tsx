@@ -32,16 +32,12 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
   keywords: ["뜨개", "도안", "작품 기록", "실 재고", "니팅", "KnitBook"],
   authors: [{ name: SITE_NAME }],
-  alternates: {
-    canonical: "/",
-  },
   openGraph: {
     type: "website",
     locale: "ko_KR",
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
-    url: siteUrl,
   },
   robots: {
     index: true,

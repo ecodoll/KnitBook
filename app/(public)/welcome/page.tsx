@@ -3,7 +3,9 @@ import LandingPage from "@/components/site/LandingPage";
 import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/knitbook/site";
 
 export const metadata: Metadata = {
-  title: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
+  title: {
+    absolute: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
+  },
   description: SITE_DESCRIPTION,
   alternates: {
     canonical: getSiteUrl(),

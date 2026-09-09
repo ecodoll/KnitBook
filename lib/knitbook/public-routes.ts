@@ -17,6 +17,8 @@ const PUBLIC_EXACT_PATHS = [
 
 const PUBLIC_PREFIXES = ["/guides/"] as const;
 
+const PROTECTED_PREFIXES = ["/patterns", "/projects", "/yarns"] as const;
+
 /**
  * 애드센스·검색 엔진이 로그인 없이 볼 수 있는 경로인지 판별한다.
  */
@@ -26,4 +28,13 @@ export const isPublicPath = (pathname: string) => {
   }
 
   return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+};
+
+/**
+ * 로그인해야만 볼 수 있는 앱 경로인지 판별한다.
+ */
+export const isProtectedPath = (pathname: string) => {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  );
 };

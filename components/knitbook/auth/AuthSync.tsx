@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isProtectedPath } from "@/lib/knitbook/public-routes";
 import { AUTH_PATHS } from "@/lib/supabase/auth-routes";
 
 /**
@@ -54,7 +55,12 @@ const AuthSync = () => {
         return;
       }
 
-      if (!isSignedIn && !onAuthPage && event === "SIGNED_OUT") {
+      if (
+        !isSignedIn &&
+        !onAuthPage &&
+        isProtectedPath(currentPath) &&
+        event === "SIGNED_OUT"
+      ) {
         router.replace("/login");
       }
     });

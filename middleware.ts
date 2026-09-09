@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isAuthPath } from "@/lib/supabase/auth-routes";
-import { isPublicPath } from "@/lib/knitbook/public-routes";
+import { isProtectedPath } from "@/lib/knitbook/public-routes";
 import { updateSession } from "@/lib/supabase/middleware";
 
 /**
@@ -32,7 +32,6 @@ const hasSupabaseConfig = () => {
 const middleware = async (request: NextRequest) => {
   const pathname = request.nextUrl.pathname;
   const onAuthPage = isAuthPath(pathname);
-  const onPublicPage = isPublicPath(pathname);
 
   if (!hasSupabaseConfig()) {
     if (pathname === "/") {
@@ -41,13 +40,13 @@ const middleware = async (request: NextRequest) => {
       return NextResponse.rewrite(url);
     }
 
-    if (onAuthPage || onPublicPage) {
-      return NextResponse.next();
+    if (isProtectedPath(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
     }
 
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return NextResponse.next();
   }
 
   const { supabaseResponse, user } = await updateSession(request);
@@ -58,8 +57,8 @@ const middleware = async (request: NextRequest) => {
     return copySessionCookies(supabaseResponse, NextResponse.rewrite(url));
   }
 
-  // 비로그인 사용자는 보호된 페이지 접근 시 로그인으로 보낸다.
-  if (!user && !onAuthPage && !onPublicPage) {
+  // 비로그인 사용자는 앱 기록 페이지 접근 시 로그인으로 보낸다.
+  if (!user && isProtectedPath(pathname)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return copySessionCookies(supabaseResponse, NextResponse.redirect(url));
