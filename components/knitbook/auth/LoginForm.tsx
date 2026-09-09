@@ -85,15 +85,7 @@ const LoginForm = ({
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="login-password">비밀번호</Label>
-          <Link
-            href="/forgot-password"
-            className="text-xs text-muted-foreground hover:text-primary hover:underline"
-          >
-            비밀번호 찾기
-          </Link>
-        </div>
+        <Label htmlFor="login-password">비밀번호</Label>
         <Input
           id="login-password"
           type="password"
@@ -120,6 +112,17 @@ const LoginForm = ({
         계정이 없나요?{" "}
         <Link href="/signup" className="text-primary font-medium hover:underline">
           회원가입
+        </Link>
+      </p>
+      <p className="text-center text-xs leading-5 text-muted-foreground">
+        <Link href="/privacy" className="underline-offset-4 hover:underline">
+          개인정보처리방침
+        </Link>
+        <span className="mx-1.5" aria-hidden>
+          ·
+        </span>
+        <Link href="/terms" className="underline-offset-4 hover:underline">
+          이용약관
         </Link>
       </p>
     </form>
