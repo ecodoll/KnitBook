@@ -2,13 +2,19 @@
 
 import { useState } from "react";
 import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
+import ForgotPasswordForm, {
+  type ForgotPasswordFormValues,
+} from "@/components/knitbook/auth/ForgotPasswordForm";
 import LoginForm, {
   type LoginFormValues,
 } from "@/components/knitbook/auth/LoginForm";
+import ErrorState from "@/components/knitbook/shared/ErrorState";
 import PageLoading from "@/components/knitbook/shared/PageLoading";
+import { requestPasswordReset } from "@/lib/knitbook/profile-client";
 import { createClient } from "@/lib/supabase/client";
 import SiteFooter from "@/components/site/SiteFooter";
 import LoginGuideLinks from "@/components/site/LoginGuideLinks";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -16,6 +22,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+
+type LoginView = "login" | "forgot" | "forgot-sent";
+
+type LoginScreenProps = {
+  resetFailed?: boolean;
+};
 
 /**
  * Supabase 로그인 오류를 사용자용 한글 메시지로 변환한다.
@@ -51,9 +63,12 @@ const getLoginErrorMessage = (error: unknown) => {
 /**
  * 로그인 화면 본문(로고·소개·폼)을 구성한다.
  */
-const LoginScreen = () => {
+const LoginScreen = ({ resetFailed = false }: LoginScreenProps) => {
+  const [view, setView] = useState<LoginView>("login");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLinkError, setResetLinkError] = useState(resetFailed);
 
   const handleLogin = async (values: LoginFormValues) => {
     setIsSubmitting(true);
@@ -82,6 +97,38 @@ const LoginScreen = () => {
     }
   };
 
+  /**
+   * 비밀번호 재설정 안내 메일을 보낸다.
+   */
+  const handleForgotPassword = async (values: ForgotPasswordFormValues) => {
+    setIsSubmitting(true);
+    try {
+      await requestPasswordReset(values.email);
+      setResetEmail(values.email);
+      setView("forgot-sent");
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[비밀번호 재설정 요청 실패]", error);
+      }
+      throw error;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const cardTitle =
+    view === "login"
+      ? "로그인"
+      : view === "forgot"
+        ? "비밀번호 재설정"
+        : "메일을 보냈어요";
+  const cardDescription =
+    view === "login"
+      ? "이메일과 비밀번호로 KnitBook에 들어와 주세요."
+      : view === "forgot"
+        ? "가입한 이메일을 입력하면 재설정 안내를 보내드려요."
+        : "메일함의 링크를 누르면 새 비밀번호를 정할 수 있어요.";
+
   if (isRedirecting) {
     return <PageLoading fullScreen />;
   }
@@ -104,17 +151,54 @@ const LoginScreen = () => {
 
         <Card className="w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-xl">로그인</CardTitle>
-            <CardDescription>
-              이메일과 비밀번호로 KnitBook에 들어와 주세요.
-            </CardDescription>
+            <CardTitle className="text-xl">{cardTitle}</CardTitle>
+            <CardDescription>{cardDescription}</CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginForm
-              showHeader={false}
-              onSubmit={handleLogin}
-              isSubmitting={isSubmitting}
-            />
+            {resetLinkError && view === "login" ? (
+              <div className="mb-4">
+                <ErrorState
+                  title="재설정 링크를 확인하지 못했어요"
+                  message="링크가 만료되었거나 이미 사용되었을 수 있어요. 아래에서 다시 요청해 주세요."
+                />
+              </div>
+            ) : null}
+
+            {view === "login" ? (
+              <LoginForm
+                showHeader={false}
+                onSubmit={handleLogin}
+                isSubmitting={isSubmitting}
+                onForgotPassword={() => {
+                  setResetLinkError(false);
+                  setView("forgot");
+                }}
+              />
+            ) : null}
+
+            {view === "forgot" ? (
+              <ForgotPasswordForm
+                onSubmit={handleForgotPassword}
+                onBackToLogin={() => setView("login")}
+                isSubmitting={isSubmitting}
+              />
+            ) : null}
+
+            {view === "forgot-sent" ? (
+              <div className="space-y-4 text-center">
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {resetEmail}로 재설정 안내를 보냈어요. 메일이 보이지 않으면
+                  스팸함도 확인해 주세요.
+                </p>
+                <Button
+                  type="button"
+                  className="w-full"
+                  onClick={() => setView("login")}
+                >
+                  로그인으로 돌아가기
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 

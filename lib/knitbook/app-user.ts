@@ -25,6 +25,23 @@ const nicknameFromMetadata = (metadata: unknown) => {
 };
 
 /**
+ * JWT 클레임에서 프로필 사진 경로를 고른다.
+ */
+const avatarFromMetadata = (metadata: unknown) => {
+  if (!metadata || typeof metadata !== "object") {
+    return undefined;
+  }
+
+  const record = metadata as Record<string, unknown>;
+  const avatarPath = record.avatar_path ?? record.avatar_url;
+  if (typeof avatarPath === "string" && avatarPath.trim()) {
+    return avatarPath.trim();
+  }
+
+  return undefined;
+};
+
+/**
  * Auth 사용자 메타데이터에서 표시용 닉네임을 고른다.
  */
 const resolveNickname = (authUser: AuthUser) => {
@@ -82,8 +99,8 @@ const getAuthUser = cache(async (): Promise<AuthUser | null> => {
 });
 
 /**
- * 로그인한 사용자의 헤더 표시 정보를 JWT에서 바로 만든다.
- * 프로필 DB 조회를 기다리지 않아 레이아웃 전환을 막지 않는다.
+ * 로그인한 사용자의 헤더 표시 정보를 만든다.
+ * 닉네임·사진은 프로필 테이블을 우선하고, 없으면 JWT 클레임을 쓴다.
  */
 const getAppHeaderUser = cache(async (): Promise<AppHeaderUser | null> => {
   const user = await getAuthUser();
@@ -91,9 +108,30 @@ const getAppHeaderUser = cache(async (): Promise<AppHeaderUser | null> => {
     return null;
   }
 
+  const supabase = await createClient();
+  const { data: profile, error } = await supabase
+    .from("users")
+    .select("nickname, profile_image")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (error && process.env.NODE_ENV === "development") {
+    console.error("[프로필 헤더 조회 실패]", error.message);
+  }
+
+  const nickname =
+    typeof profile?.nickname === "string" && profile.nickname.trim()
+      ? profile.nickname.trim()
+      : resolveNickname(user);
+  const avatarPath =
+    typeof profile?.profile_image === "string" && profile.profile_image.trim()
+      ? profile.profile_image.trim()
+      : avatarFromMetadata(user.user_metadata);
+
   return {
-    nickname: resolveNickname(user),
+    nickname,
     email: user.email ?? undefined,
+    avatarPath,
   };
 });
 

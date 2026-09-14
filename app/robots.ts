@@ -12,7 +12,14 @@ const robots = (): MetadataRoute.Robots => {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/signup", "/patterns/", "/projects/", "/yarns/"],
+        disallow: [
+          "/signup",
+          "/reset-password",
+          "/auth/",
+          "/patterns/",
+          "/projects/",
+          "/yarns/",
+        ],
       },
       {
         userAgent: "Mediapartners-Google",
