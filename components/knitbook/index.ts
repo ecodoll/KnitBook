@@ -51,5 +51,9 @@ export { default as YarnStockAdjustForm } from "@/components/knitbook/yarns/Yarn
 
 export { default as LoginForm } from "@/components/knitbook/auth/LoginForm";
 export { default as SignupForm } from "@/components/knitbook/auth/SignupForm";
+export { default as ForgotPasswordForm } from "@/components/knitbook/auth/ForgotPasswordForm";
+export { default as ResetPasswordForm } from "@/components/knitbook/auth/ResetPasswordForm";
 export { default as AuthSync } from "@/components/knitbook/auth/AuthSync";
 export { default as KnitBookLogo } from "@/components/knitbook/auth/KnitBookLogo";
+export { default as EditProfileDialog } from "@/components/knitbook/profile/EditProfileDialog";
+export { default as SettingsDialog } from "@/components/knitbook/profile/SettingsDialog";

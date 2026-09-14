@@ -18,6 +18,8 @@ type LoginFormProps = {
   isSubmitting?: boolean;
   /** 폼 상단 브랜드 문구 표시 여부 (페이지에서 로고를 쓸 때는 false) */
   showHeader?: boolean;
+  /** 비밀번호 재설정 화면으로 이동할 때 호출한다 */
+  onForgotPassword?: () => void;
 };
 
 /**
@@ -27,6 +29,7 @@ const LoginForm = ({
   onSubmit,
   isSubmitting = false,
   showHeader = true,
+  onForgotPassword,
 }: LoginFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -95,6 +98,18 @@ const LoginForm = ({
           required
           disabled={isSubmitting}
         />
+        {onForgotPassword ? (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              className="text-xs font-medium text-primary hover:underline"
+              onClick={onForgotPassword}
+              disabled={isSubmitting}
+            >
+              비밀번호를 잊으셨나요?
+            </button>
+          </div>
+        ) : null}
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>

@@ -3,17 +3,24 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings, UserRound } from "lucide-react";
 import AppHeaderBrand from "@/components/knitbook/layout/AppHeaderBrand";
+import EditProfileDialog from "@/components/knitbook/profile/EditProfileDialog";
+import SettingsDialog from "@/components/knitbook/profile/SettingsDialog";
 import ErrorState from "@/components/knitbook/shared/ErrorState";
+import StorageImage from "@/components/knitbook/shared/StorageImage";
 import { createClient } from "@/lib/supabase/client";
+import { isHttpUrl } from "@/lib/knitbook/patterns/signed-url";
+import { resolveProfileImageUrl } from "@/lib/knitbook/profile-client";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
@@ -21,6 +28,7 @@ import { Spinner } from "@/components/ui/spinner";
 export type AppHeaderUser = {
   nickname: string;
   email?: string;
+  avatarPath?: string;
 };
 
 type AppHeaderProps = {
@@ -28,12 +36,27 @@ type AppHeaderProps = {
 };
 
 /**
+ * 프로필 메뉴를 연 뒤 팝업이 열리도록 한 박자 늦춘다.
+ */
+const openAfterMenuClose = (open: () => void) => {
+  window.setTimeout(open, 0);
+};
+
+/**
  * 앱 상단 헤더(로고·프로필 메뉴)를 렌더링한다.
  */
 const AppHeader = ({ user }: AppHeaderProps) => {
   const router = useRouter();
+  const [optimisticUser, setOptimisticUser] = useState<Pick<
+    AppHeaderUser,
+    "nickname" | "avatarPath"
+  > | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const nickname = optimisticUser?.nickname ?? user.nickname;
+  const avatarPath = optimisticUser?.avatarPath ?? user.avatarPath;
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -59,8 +82,10 @@ const AppHeader = ({ user }: AppHeaderProps) => {
     }
   };
 
-  const initial = user.nickname.trim().slice(0, 1) || "?";
+  const initial = nickname.trim().slice(0, 1) || "?";
   const email = user.email?.trim() || "이메일 없음";
+  const avatarSrc = avatarPath && isHttpUrl(avatarPath) ? avatarPath : undefined;
+  const avatarStoragePath = avatarSrc ? undefined : avatarPath;
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-sm">
@@ -75,26 +100,56 @@ const AppHeader = ({ user }: AppHeaderProps) => {
                 variant="ghost"
                 size="icon-sm"
                 className="cursor-pointer rounded-full"
-                aria-label={`${user.nickname} 프로필 메뉴`}
+                aria-label={`${nickname} 프로필 메뉴`}
               />
             }
           >
             <Avatar size="sm">
-              <AvatarFallback>{initial}</AvatarFallback>
+              {avatarSrc || avatarStoragePath ? (
+                <StorageImage
+                  src={avatarSrc}
+                  storagePath={avatarStoragePath}
+                  resolveUrl={resolveProfileImageUrl}
+                  alt=""
+                  className="aspect-square size-full rounded-full object-cover"
+                  fallback={<AvatarFallback>{initial}</AvatarFallback>}
+                />
+              ) : (
+                <AvatarFallback>{initial}</AvatarFallback>
+              )}
             </Avatar>
           </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="min-w-56 p-3">
-              <DropdownMenuGroup>
-                <DropdownMenuLabel className="space-y-0.5 px-0 text-foreground">
-                  <span className="block truncate text-sm font-medium">
-                    {user.nickname}
-                  </span>
-                  <span className="block truncate text-sm font-normal text-muted-foreground">
-                    {email}
-                  </span>
-                </DropdownMenuLabel>
-              </DropdownMenuGroup>
+          <DropdownMenuContent align="end" className="min-w-56 p-3">
+            <DropdownMenuGroup>
+              <DropdownMenuLabel className="space-y-0.5 px-0 text-foreground">
+                <span className="block truncate text-sm font-medium">
+                  {nickname}
+                </span>
+                <span className="block truncate text-sm font-normal text-muted-foreground">
+                  {email}
+                </span>
+              </DropdownMenuLabel>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator className="my-2" />
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                openAfterMenuClose(() => setIsEditOpen(true));
+              }}
+            >
+              <UserRound />
+              프로필 편집
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              className="cursor-pointer"
+              onClick={() => {
+                openAfterMenuClose(() => setIsSettingsOpen(true));
+              }}
+            >
+              <Settings />
+              설정
+            </DropdownMenuItem>
             <div className="mt-3 flex flex-col gap-1 text-xs text-muted-foreground">
               <Link
                 href="/privacy"
@@ -135,6 +190,21 @@ const AppHeader = ({ user }: AppHeaderProps) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      <EditProfileDialog
+        open={isEditOpen}
+        nickname={nickname}
+        avatarPath={avatarPath}
+        onOpenChange={setIsEditOpen}
+        onUpdated={(next) => {
+          setOptimisticUser({
+            nickname: next.nickname,
+            avatarPath: next.avatarPath,
+          });
+          router.refresh();
+        }}
+      />
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
 
       {errorMessage ? (
         <div className="mx-auto max-w-lg px-4 pb-3">

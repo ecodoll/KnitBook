@@ -11,11 +11,28 @@ export const metadata: Metadata = {
   },
 };
 
+type LoginPageProps = {
+  searchParams: Promise<{ reset?: string | string[] }>;
+};
+
+/**
+ * 재설정 실패 쿼리가 있는지 판별한다.
+ */
+const hasResetFailed = (value: string | string[] | undefined) => {
+  if (Array.isArray(value)) {
+    return value.includes("failed");
+  }
+
+  return value === "failed";
+};
+
 /**
  * 이메일 로그인 페이지 진입점이다.
  */
-const LoginPage = () => {
-  return <LoginScreen />;
+const LoginPage = async ({ searchParams }: LoginPageProps) => {
+  const params = await searchParams;
+
+  return <LoginScreen resetFailed={hasResetFailed(params.reset)} />;
 };
 
 export default LoginPage;
