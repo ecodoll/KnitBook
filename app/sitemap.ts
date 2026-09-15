@@ -7,11 +7,11 @@ import { getSiteUrl } from "@/lib/knitbook/site";
  */
 const sitemap = (): MetadataRoute.Sitemap => {
   const siteUrl = getSiteUrl();
-  const lastModified = new Date("2026-09-09");
+  const lastModified = new Date("2026-09-15");
 
   const staticPaths = [
-    { path: "/guides", changeFrequency: "weekly" as const, priority: 1 },
-    { path: "/welcome", changeFrequency: "monthly" as const, priority: 0.7 },
+    { path: "", changeFrequency: "weekly" as const, priority: 1 },
+    { path: "/guides", changeFrequency: "weekly" as const, priority: 0.9 },
     { path: "/about", changeFrequency: "monthly" as const, priority: 0.7 },
     { path: "/privacy", changeFrequency: "monthly" as const, priority: 0.6 },
     { path: "/terms", changeFrequency: "monthly" as const, priority: 0.6 },
