@@ -13,6 +13,7 @@ const robots = (): MetadataRoute.Robots => {
         userAgent: "*",
         allow: "/",
         disallow: [
+          "/login",
           "/signup",
           "/reset-password",
           "/auth/",

@@ -6,14 +6,33 @@ import { updateSession } from "@/lib/supabase/middleware";
 /**
  * Supabase 세션 쿠키를 다른 응답에 그대로 옮긴다.
  */
-const copySessionCookies = (
-  from: NextResponse,
-  to: NextResponse
-) => {
+const copySessionCookies = (from: NextResponse, to: NextResponse) => {
   from.cookies.getAll().forEach((cookie) => {
     to.cookies.set(cookie);
   });
   return to;
+};
+
+/**
+ * 비로그인 홈을 공개 랜딩(/welcome)으로 내부 연결한다. 주소는 / 로 유지한다.
+ */
+const rewriteGuestHome = (request: NextRequest, from?: NextResponse) => {
+  const url = request.nextUrl.clone();
+  url.pathname = "/welcome";
+  const rewritten = NextResponse.rewrite(url);
+
+  return from ? copySessionCookies(from, rewritten) : rewritten;
+};
+
+/**
+ * 로그인 화면으로 보낸다.
+ */
+const redirectToLogin = (request: NextRequest, from?: NextResponse) => {
+  const url = request.nextUrl.clone();
+  url.pathname = "/login";
+  const redirected = NextResponse.redirect(url);
+
+  return from ? copySessionCookies(from, redirected) : redirected;
 };
 
 /**
@@ -34,10 +53,12 @@ const middleware = async (request: NextRequest) => {
   const onAuthPage = isAuthPath(pathname);
 
   if (!hasSupabaseConfig()) {
-    if (pathname === "/" || isProtectedPath(pathname)) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/login";
-      return NextResponse.redirect(url);
+    if (pathname === "/") {
+      return rewriteGuestHome(request);
+    }
+
+    if (isProtectedPath(pathname)) {
+      return redirectToLogin(request);
     }
 
     return NextResponse.next();
@@ -45,11 +66,14 @@ const middleware = async (request: NextRequest) => {
 
   const { supabaseResponse, user } = await updateSession(request);
 
-  // 비로그인 기본 화면은 로그인이다. 가이드는 로그인 화면 버튼으로 연다.
-  if (!user && (pathname === "/" || isProtectedPath(pathname))) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return copySessionCookies(supabaseResponse, NextResponse.redirect(url));
+  // 비로그인 기본 화면은 공개 랜딩이다. 주소는 / 로 두고 본문만 /welcome 을 쓴다.
+  if (!user && pathname === "/") {
+    return rewriteGuestHome(request, supabaseResponse);
+  }
+
+  // 기록장·도안·실 같은 보호 경로는 로그인 화면으로 보낸다.
+  if (!user && isProtectedPath(pathname)) {
+    return redirectToLogin(request, supabaseResponse);
   }
 
   // 로그인된 사용자는 인증 페이지 접근 시 메인으로 보낸다.
