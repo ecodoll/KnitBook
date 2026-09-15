@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import GuideList from "@/components/site/GuideList";
 
 export const metadata: Metadata = {
-  title: "뜨개 가이드",
-  description:
-    "게이지, 실 라벨, 작품 기록, 재고 정리, 도안 보관 등 뜨개를 이어 가기 위한 공개 가이드입니다.",
+    title: "뜨개 가이드",
+    description:
+      "게이지, 실 라벨, 도안 보는 법, 작품 기록, 재고 정리, 도안 보관 등 뜨개를 이어 가기 위한 공개 가이드입니다.",
 };
 
 /**

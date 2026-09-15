@@ -45,7 +45,7 @@ const middleware = async (request: NextRequest) => {
 
   const { supabaseResponse, user } = await updateSession(request);
 
-  // 비로그인 기본 화면은 로그인이다. 가이드는 로그인 화면 버튼으로 연다.
+  // 비로그인 기본 화면은 로그인이다. 왼쪽 목록에서 가이드를 바로 연다.
   if (!user && (pathname === "/" || isProtectedPath(pathname))) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";

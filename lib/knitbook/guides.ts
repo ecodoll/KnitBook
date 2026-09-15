@@ -2,6 +2,10 @@
  * 애드센스 심사와 방문자를 위한 공개 뜨개 가이드 원문을 보관한다.
  */
 
+export const GUIDE_CATEGORY_IDS = ["basics", "recommended"] as const;
+
+export type GuideCategoryId = (typeof GUIDE_CATEGORY_IDS)[number];
+
 export type GuideSection = {
   heading: string;
   paragraphs: string[];
@@ -10,14 +14,23 @@ export type GuideSection = {
 export type GuideArticle = {
   slug: string;
   title: string;
-  /** 로그인 화면 버튼에 쓰는 짧은 이름 */
+  /** 로그인 화면 목록에 쓰는 짧은 이름 */
   shortTitle: string;
   description: string;
   publishedAt: string;
   updatedAt: string;
   readingMinutes: number;
+  /** 로그인 첫 화면 왼쪽 목록의 구분 */
+  category: GuideCategoryId;
+  /** 같은 구분 안에서의 표시 순서 */
+  sidebarOrder: number;
   sections: GuideSection[];
 };
+
+export const GUIDE_CATEGORIES: { id: GuideCategoryId; title: string }[] = [
+  { id: "basics", title: "기초 가이드" },
+  { id: "recommended", title: "추천 콘텐츠" },
+];
 
 export const GUIDES: GuideArticle[] = [
   {
@@ -29,6 +42,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-01",
     updatedAt: "2026-09-09",
     readingMinutes: 8,
+    category: "basics",
+    sidebarOrder: 4,
     sections: [
       {
         heading: "게이지가 어긋나면 생기는 일",
@@ -64,6 +79,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-02",
     updatedAt: "2026-09-09",
     readingMinutes: 7,
+    category: "basics",
+    sidebarOrder: 2,
     sections: [
       {
         heading: "라벨에 꼭 있는 네 가지",
@@ -97,6 +114,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-03",
     updatedAt: "2026-09-09",
     readingMinutes: 7,
+    category: "recommended",
+    sidebarOrder: 1,
     sections: [
       {
         heading: "다시 집을 때 막히는 지점",
@@ -131,6 +150,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-04",
     updatedAt: "2026-09-09",
     readingMinutes: 8,
+    category: "recommended",
+    sidebarOrder: 2,
     sections: [
       {
         heading: "실이 쌓이는 전형적인 이유",
@@ -166,6 +187,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-05",
     updatedAt: "2026-09-09",
     readingMinutes: 7,
+    category: "recommended",
+    sidebarOrder: 3,
     sections: [
       {
         heading: "도안이 사라지는 위치",
@@ -200,6 +223,8 @@ export const GUIDES: GuideArticle[] = [
     publishedAt: "2026-09-06",
     updatedAt: "2026-09-09",
     readingMinutes: 8,
+    category: "basics",
+    sidebarOrder: 1,
     sections: [
       {
         heading: "첫 작품부터 정하면 공구가 정해집니다",
@@ -224,6 +249,48 @@ export const GUIDES: GuideArticle[] = [
       },
     ],
   },
+  {
+    slug: "read-pattern",
+    title: "뜨개 도안, 첫 장에서 꼭 확인할 것",
+    shortTitle: "도안 보는 법",
+    description:
+      "본문 단수부터 읽으면 길을 잃기 쉽습니다. 실·바늘·게이지·사이즈·약어만 먼저 찾아 두면 나머지는 따라가기 수월합니다.",
+    publishedAt: "2026-09-15",
+    updatedAt: "2026-09-15",
+    readingMinutes: 8,
+    category: "basics",
+    sidebarOrder: 3,
+    sections: [
+      {
+        heading: "처음부터 몸판 단수를 읽지 마세요",
+        paragraphs: [
+          "PDF를 열면 보통 표지 다음에 약어표, 게이지, 사이즈 표, 필요 실 미터가 나옵니다. 초보일수록 4페이지쯤에 있는 ‘몸판: 1단 겉뜨기…’부터 눈이 갑니다. 그 문장은 앞 장의 숫자를 전제로 쓰여 있어서, 내 사이즈 칸을 표시해 두지 않으면 옆 사이즈의 코 수를 따라가게 됩니다.",
+          "처음 10분은 뜨지 말고 표시만 합니다. ① 내가 뜰 사이즈 열 ② 게이지(10cm당 코·단) ③ 권장 바늘 ④ 실의 총 미터 ⑤ 약어표. 이 다섯 곳에 형광펜이나 메모만 해 두면, 본문을 읽을 때 ‘이 숫자가 내 것인지’를 매번 다시 찾지 않아도 됩니다.",
+        ],
+      },
+      {
+        heading: "자주 나오는 기호만 먼저 외우면 됩니다",
+        paragraphs: [
+          "한국어 도안의 겉뜨기는 영어 도안에서 K(knit), 안뜨기는 P(purl)입니다. 코 줄이기는 보통 ‘2코 함께 뜨기’가 k2tog, 반대 방향으로 기울이는 줄이기가 ssk입니다. 코 늘리기는 도안마다 다릅니다. 실걸기(yo)인지, 앞뒤 실에서 한 코를 떠 올리는 M1인지 약어표를 반드시 확인하세요. 같은 ‘늘리기’라도 구멍이 생기는 방식과 안 생기는 방식이 섞여 있습니다.",
+          "차트(도안 그림)는 범례가 생명입니다. 빈 칸이 겉뜨기인 도안이 많고, 색이 들어간 칸이 무늬 코입니다. 겉단(RS)은 오른쪽에서 왼쪽으로 읽는 도안이 흔하지만, 원형 뜨기는 매 단을 오른쪽에서 왼쪽으로만 읽는 경우도 있습니다. 차트 옆에 ‘RS: → ←’처럼 화살표가 있으면 그 화살표를 따르고, 없으면 글 도안 한 단과 차트 한 줄을 맞춰 보고 시작하세요.",
+        ],
+      },
+      {
+        heading: "*와 괄호는 반복 구간입니다",
+        paragraphs: [
+          "영문 도안의 *K2, P2; repeat from * to end는 ‘겉 2, 안 2를 단 끝까지 반복’입니다. 한국어 도안은 「*부터 *까지 반복」, 「(겉2, 안2) 반복」처럼 적습니다. 괄호 안의 코 수는 ‘지금 이 자리에서 한꺼번에 다루는 동작’인 경우가 많습니다. 예: (K1, yo, K1) in next st는 한 코에서 세 코가 나옵니다.",
+          "반복을 세다가 코가 안 맞으면, 그 단을 푸는 것보다 단 시작 코 수를 먼저 셉니다. 도안이 ‘96코에서 시작한다’고 했는데 바늘에 94코면 반복 기호를 잘못 읽은 것입니다. 단을 다 뜬 뒤가 아니라, 첫 반복 두세 번만 해보고 코 수가 맞는지 확인하는 편이 훨씬 덜 아깝습니다.",
+        ],
+      },
+      {
+        heading: "사이즈 표에서 내 칸만 남기세요",
+        paragraphs: [
+          "완성 가슴둘레와 내 가슴둘레는 다릅니다. 도안은 보통 완성 치수를 적습니다. 몸에 붙는 스웨터를 원하면 내 둘레와 비슷하거나 조금 큰 칸을, 여유 있는 핏을 원하면 8~12cm 정도 큰 칸을 고릅니다. 모든 숫자가 한 줄에 나열된 도안은 내 사이즈만 동그라미 쳐 두고 나머지는 보지 않는 것이 실수가 적습니다.",
+          "소매 길이나 몸판 길이는 코 수보다 센티미터를 우선하세요. ‘암홀 전까지 40단’보다 ‘몸판이 25cm가 될 때까지’가 내 게이지에 안전합니다. 게이지가 도안과 조금 달라도, 길이만 자로 재며 뜨면 소매가 끝나기 전에 바닥에 끌리는 일을 막을 수 있습니다.",
+        ],
+      },
+    ],
+  },
 ];
 
 /**
@@ -240,4 +307,23 @@ export const getAllGuides = () => {
   return [...GUIDES].sort((left, right) =>
     right.publishedAt.localeCompare(left.publishedAt)
   );
+};
+
+export type GuideCategoryGroup = {
+  id: GuideCategoryId;
+  title: string;
+  guides: GuideArticle[];
+};
+
+/**
+ * 로그인 첫 화면 왼쪽 목록용으로 가이드를 구분·순서대로 묶는다.
+ */
+export const getGuidesGrouped = (): GuideCategoryGroup[] => {
+  return GUIDE_CATEGORIES.map((category) => ({
+    id: category.id,
+    title: category.title,
+    guides: GUIDES.filter((guide) => guide.category === category.id).sort(
+      (left, right) => left.sidebarOrder - right.sidebarOrder
+    ),
+  }));
 };

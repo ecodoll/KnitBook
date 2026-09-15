@@ -12,8 +12,6 @@ import ErrorState from "@/components/knitbook/shared/ErrorState";
 import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { requestPasswordReset } from "@/lib/knitbook/profile-client";
 import { createClient } from "@/lib/supabase/client";
-import SiteFooter from "@/components/site/SiteFooter";
-import LoginGuideLinks from "@/components/site/LoginGuideLinks";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -61,7 +59,7 @@ const getLoginErrorMessage = (error: unknown) => {
 };
 
 /**
- * 로그인 화면 본문(로고·소개·폼)을 구성한다.
+ * 로그인 첫 화면 오른쪽에 로고·소개·폼을 구성한다.
  */
 const LoginScreen = ({ resetFailed = false }: LoginScreenProps) => {
   const [view, setView] = useState<LoginView>("login");
@@ -134,79 +132,67 @@ const LoginScreen = ({ resetFailed = false }: LoginScreenProps) => {
   }
 
   return (
-    <div className="relative flex min-h-full flex-1 flex-col">
-      <div
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_oklch(0.935_0.012_152)_0%,_transparent_55%),radial-gradient(ellipse_at_bottom_right,_oklch(0.945_0.025_8)_0%,_transparent_40%)]"
-        aria-hidden
-      />
-
-      <div className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-8 px-4 py-10">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <KnitBookLogo />
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
-            도안·작품·실을 한곳에서 관리하고, 지금 뜨고 있는 작품을 기억해 주는
-            나만의 뜨개 비서예요.
-          </p>
-        </div>
-
-        <Card className="w-full">
-          <CardHeader className="text-center">
-            <CardTitle className="text-xl">{cardTitle}</CardTitle>
-            <CardDescription>{cardDescription}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {resetLinkError && view === "login" ? (
-              <div className="mb-4">
-                <ErrorState
-                  title="재설정 링크를 확인하지 못했어요"
-                  message="링크가 만료되었거나 이미 사용되었을 수 있어요. 아래에서 다시 요청해 주세요."
-                />
-              </div>
-            ) : null}
-
-            {view === "login" ? (
-              <LoginForm
-                showHeader={false}
-                onSubmit={handleLogin}
-                isSubmitting={isSubmitting}
-                onForgotPassword={() => {
-                  setResetLinkError(false);
-                  setView("forgot");
-                }}
-              />
-            ) : null}
-
-            {view === "forgot" ? (
-              <ForgotPasswordForm
-                onSubmit={handleForgotPassword}
-                onBackToLogin={() => setView("login")}
-                isSubmitting={isSubmitting}
-              />
-            ) : null}
-
-            {view === "forgot-sent" ? (
-              <div className="space-y-4 text-center">
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {resetEmail}로 재설정 안내를 보냈어요. 메일이 보이지 않으면
-                  스팸함도 확인해 주세요.
-                </p>
-                <Button
-                  type="button"
-                  className="w-full"
-                  onClick={() => setView("login")}
-                >
-                  로그인으로 돌아가기
-                </Button>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <LoginGuideLinks />
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center gap-8 px-4 py-10">
+      <div className="flex flex-col items-center gap-3 text-center">
+        <KnitBookLogo />
+        <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+          도안·작품·실을 한곳에서 관리하고, 지금 뜨고 있는 작품을 기억해 주는
+          나만의 뜨개 비서예요.
+        </p>
       </div>
-      <div className="relative z-10">
-        <SiteFooter />
-      </div>
+
+      <Card className="w-full">
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">{cardTitle}</CardTitle>
+          <CardDescription>{cardDescription}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {resetLinkError && view === "login" ? (
+            <div className="mb-4">
+              <ErrorState
+                title="재설정 링크를 확인하지 못했어요"
+                message="링크가 만료되었거나 이미 사용되었을 수 있어요. 아래에서 다시 요청해 주세요."
+              />
+            </div>
+          ) : null}
+
+          {view === "login" ? (
+            <LoginForm
+              showHeader={false}
+              onSubmit={handleLogin}
+              isSubmitting={isSubmitting}
+              onForgotPassword={() => {
+                setResetLinkError(false);
+                setView("forgot");
+              }}
+            />
+          ) : null}
+
+          {view === "forgot" ? (
+            <ForgotPasswordForm
+              onSubmit={handleForgotPassword}
+              onBackToLogin={() => setView("login")}
+              isSubmitting={isSubmitting}
+            />
+          ) : null}
+
+          {view === "forgot-sent" ? (
+            <div className="space-y-4 text-center">
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {resetEmail}로 재설정 안내를 보냈어요. 메일이 보이지 않으면
+                스팸함도 확인해 주세요.
+              </p>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={() => setView("login")}
+              >
+                로그인으로 돌아가기
+              </Button>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
     </div>
   );
 };
