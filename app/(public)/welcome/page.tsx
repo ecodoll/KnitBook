@@ -1,19 +1,27 @@
 import type { Metadata } from "next";
 import LandingPage from "@/components/site/LandingPage";
-import { getSiteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/knitbook/site";
+import { getAllGuides } from "@/lib/knitbook/guides";
+import { LANDING_FAQS, LANDING_META_DESCRIPTION } from "@/lib/knitbook/landing-content";
+import { getSiteUrl, SITE_NAME } from "@/lib/knitbook/site";
 
 export const metadata: Metadata = {
   title: {
     absolute: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
   },
-  description: SITE_DESCRIPTION,
+  description: LANDING_META_DESCRIPTION,
   alternates: {
     canonical: getSiteUrl(),
+  },
+  openGraph: {
+    title: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
+    description: LANDING_META_DESCRIPTION,
+    url: getSiteUrl(),
+    type: "website",
   },
 };
 
 /**
- * 비로그인 홈으로 다시 쓰는 랜딩 본문이다.
+ * 비로그인 홈 본문이다. 미들웨어가 / 요청을 이 경로로 내부 연결한다.
  */
 const WelcomePage = () => {
   const siteUrl = getSiteUrl();
@@ -25,7 +33,7 @@ const WelcomePage = () => {
         name: SITE_NAME,
         url: siteUrl,
         inLanguage: "ko-KR",
-        description: SITE_DESCRIPTION,
+        description: LANDING_META_DESCRIPTION,
       },
       {
         "@type": "WebApplication",
@@ -34,12 +42,33 @@ const WelcomePage = () => {
         applicationCategory: "LifestyleApplication",
         operatingSystem: "Web",
         inLanguage: "ko-KR",
-        description: SITE_DESCRIPTION,
+        description: LANDING_META_DESCRIPTION,
         offers: {
           "@type": "Offer",
           price: "0",
           priceCurrency: "KRW",
         },
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: LANDING_FAQS.map((faq) => ({
+          "@type": "Question",
+          name: faq.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: faq.answer,
+          },
+        })),
+      },
+      {
+        "@type": "ItemList",
+        name: "KnitBook 뜨개 가이드",
+        itemListElement: getAllGuides().map((guide, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          url: `${siteUrl}/guides/${guide.slug}`,
+          name: guide.title,
+        })),
       },
     ],
   };

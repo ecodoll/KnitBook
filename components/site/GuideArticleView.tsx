@@ -1,5 +1,10 @@
 import Link from "next/link";
 import ContentAd from "@/components/adsense/ContentAd";
+import GuideFigure from "@/components/site/GuideFigure";
+import {
+  getGuideHeroFigure,
+  getGuideSectionFigure,
+} from "@/lib/knitbook/guide-images";
 import type { GuideArticle } from "@/lib/knitbook/guides";
 
 type GuideArticleViewProps = {
@@ -10,6 +15,8 @@ type GuideArticleViewProps = {
  * 공개 가이드 원문과 하단 광고 영역을 렌더한다.
  */
 const GuideArticleView = ({ guide }: GuideArticleViewProps) => {
+  const hero = getGuideHeroFigure(guide.slug);
+
   return (
     <article className="space-y-8">
       <header className="space-y-3">
@@ -36,22 +43,29 @@ const GuideArticleView = ({ guide }: GuideArticleViewProps) => {
         </p>
       </header>
 
+      {hero ? <GuideFigure figure={hero} priority /> : null}
+
       <div className="space-y-8">
-        {guide.sections.map((section) => (
-          <section key={section.heading} className="space-y-3">
-            <h2 className="font-heading text-xl font-semibold text-foreground">
-              {section.heading}
-            </h2>
-            {section.paragraphs.map((paragraph) => (
-              <p
-                key={paragraph}
-                className="text-sm leading-7 text-muted-foreground"
-              >
-                {paragraph}
-              </p>
-            ))}
-          </section>
-        ))}
+        {guide.sections.map((section) => {
+          const sectionFigure = getGuideSectionFigure(guide.slug, section.heading);
+
+          return (
+            <section key={section.heading} className="space-y-3">
+              <h2 className="font-heading text-xl font-semibold text-foreground">
+                {section.heading}
+              </h2>
+              {sectionFigure ? <GuideFigure figure={sectionFigure} /> : null}
+              {section.paragraphs.map((paragraph) => (
+                <p
+                  key={paragraph}
+                  className="text-sm leading-7 text-muted-foreground"
+                >
+                  {paragraph}
+                </p>
+              ))}
+            </section>
+          );
+        })}
       </div>
 
       <ContentAd slot="guide" className="py-2" />

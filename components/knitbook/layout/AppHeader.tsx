@@ -70,7 +70,7 @@ const AppHeader = ({ user }: AppHeaderProps) => {
         throw error;
       }
 
-      router.replace("/login");
+      router.replace("/");
       router.refresh();
     } catch (error) {
       if (process.env.NODE_ENV === "development") {

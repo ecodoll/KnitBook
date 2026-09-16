@@ -1,8 +1,20 @@
+import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Layers, Scissors, NotebookPen } from "lucide-react";
+import { BookOpen, Layers, NotebookPen, Scissors } from "lucide-react";
 import ContentAd from "@/components/adsense/ContentAd";
-import { getAllGuides } from "@/lib/knitbook/guides";
-import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from "@/lib/knitbook/site";
+import LandingHeroVisual from "@/components/site/LandingHeroVisual";
+import { getGuideHeroFigure } from "@/lib/knitbook/guide-images";
+import { getAllGuides, getFeaturedGuides } from "@/lib/knitbook/guides";
+import {
+  LANDING_AUDIENCE,
+  LANDING_FAQS,
+  LANDING_HERO_EYEBROW,
+  LANDING_HERO_LEAD,
+  LANDING_HERO_TITLE,
+  LANDING_PROBLEM_PARAGRAPHS,
+  LANDING_STEPS,
+} from "@/lib/knitbook/landing-content";
+import { SITE_NAME } from "@/lib/knitbook/site";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,31 +54,127 @@ const FEATURES = [
  * 비로그인 홈(랜딩)에 서비스 소개와 공개 가이드를 보여 준다.
  */
 const LandingPage = () => {
-  const guides = getAllGuides();
+  const featuredGuides = getFeaturedGuides();
+  const featuredSlugs = new Set(featuredGuides.map((guide) => guide.slug));
+  const moreGuides = getAllGuides().filter(
+    (guide) => !featuredSlugs.has(guide.slug)
+  );
 
   return (
-    <div className="space-y-14">
-      <section className="space-y-5">
-        <p className="text-sm font-medium text-primary">{SITE_NAME}</p>
-        <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-          {SITE_TAGLINE}
-        </h1>
-        <p className="text-base leading-7 text-muted-foreground">
-          {SITE_DESCRIPTION} 로그인하지 않아도 뜨개 준비와 기록에 대한 가이드를
-          읽을 수 있고, 가입하면 나의 도안과 작품을 비공개로 관리할 수 있습니다.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Button nativeButton={false} render={<Link href="/signup" />}>
-            무료로 시작하기
-          </Button>
-          <Button
-            nativeButton={false}
-            variant="outline"
-            render={<Link href="/guides" />}
-          >
-            뜨개 가이드 읽기
-          </Button>
+    <div className="space-y-16">
+      <section className="grid items-center gap-8 sm:grid-cols-[minmax(0,1.15fr)_minmax(16rem,0.85fr)]">
+        <div className="space-y-5">
+          <p className="text-sm font-medium text-primary">{LANDING_HERO_EYEBROW}</p>
+          <h1 className="font-heading text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
+            {LANDING_HERO_TITLE}
+          </h1>
+          <div className="space-y-3 text-base leading-7 text-muted-foreground">
+            {LANDING_HERO_LEAD.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button nativeButton={false} render={<Link href="/guides" />}>
+              뜨개 가이드 읽기
+            </Button>
+            <Button
+              nativeButton={false}
+              variant="outline"
+              render={<Link href="/signup" />}
+            >
+              무료로 시작하기
+            </Button>
+          </div>
         </div>
+        <LandingHeroVisual />
+      </section>
+
+      <section className="space-y-4" aria-labelledby="guide-heading">
+        <div className="flex items-end justify-between gap-3">
+          <div className="space-y-1">
+            <h2
+              id="guide-heading"
+              className="font-heading text-xl font-semibold text-foreground"
+            >
+              지금 바로 읽는 뜨개 가이드
+            </h2>
+            <p className="text-sm leading-6 text-muted-foreground">
+              계정 없이 원문 전체를 볼 수 있습니다. 도구를 사기 전, 또는 작품을
+              다시 집기 전에 열어 보세요.
+            </p>
+          </div>
+          <Link
+            href="/guides"
+            className="shrink-0 text-sm font-medium text-primary underline-offset-4 hover:underline"
+          >
+            모두 보기
+          </Link>
+        </div>
+        <ul className="grid gap-3 sm:grid-cols-2">
+          {featuredGuides.map((guide) => {
+            const hero = getGuideHeroFigure(guide.slug);
+
+            return (
+              <li key={guide.slug}>
+                <Link
+                  href={`/guides/${guide.slug}`}
+                  className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:bg-muted/60"
+                >
+                  {hero ? (
+                    <div className="relative aspect-video overflow-hidden bg-muted">
+                      <Image
+                        src={hero.src}
+                        alt={hero.alt}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 24rem"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="px-4 py-4">
+                    <p className="text-xs font-medium text-primary">
+                      {guide.shortTitle}
+                      <span className="mx-1.5 text-muted-foreground" aria-hidden>
+                        ·
+                      </span>
+                      <span className="font-normal text-muted-foreground">
+                        {guide.readingMinutes}분 읽기
+                      </span>
+                    </p>
+                    <p className="mt-2 font-heading text-base font-semibold leading-6 text-foreground">
+                      {guide.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {guide.description}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+        {moreGuides.length > 0 ? (
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">이어서 읽기</p>
+            <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+              {moreGuides.map((guide) => (
+                <li key={guide.slug}>
+                  <Link
+                    href={`/guides/${guide.slug}`}
+                    className="flex items-baseline justify-between gap-3 px-4 py-3 transition-colors hover:bg-muted/60"
+                  >
+                    <span className="text-sm font-medium text-foreground">
+                      {guide.title}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {guide.readingMinutes}분
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
 
       <section className="space-y-4" aria-labelledby="problem-heading">
@@ -77,18 +185,37 @@ const LandingPage = () => {
           뜨개 기록이 흩어지면 생기는 일
         </h2>
         <div className="space-y-3 text-sm leading-7 text-muted-foreground">
-          <p>
-            유료 도안은 이메일 링크에 남아 있고, 진행 중인 단수는 메모장이나
-            사진 앱에 있습니다. 실 라벨은 타래에서 떨어져 나가고, 같은 색을 이미
-            사 놓고도 다시 장바구니에 담게 됩니다. 며칠 쉬고 돌아오면 소매를
-            어디서 줄였는지 기억나지 않아 도안을 처음부터 다시 읽게 됩니다.
-          </p>
-          <p>
-            KnitBook은 이 세 가지—도안, 작품, 실—를 한 서비스 안에 모아 두는
-            것을 목표로 합니다. 화려한 커뮤니티보다, 내가 지금 뜨고 있는 작업을
-            안전하게 이어 갈 수 있는 개인 기록장을 우선합니다.
-          </p>
+          {LANDING_PROBLEM_PARAGRAPHS.map((paragraph) => (
+            <p key={paragraph}>{paragraph}</p>
+          ))}
         </div>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="steps-heading">
+        <h2
+          id="steps-heading"
+          className="font-heading text-xl font-semibold text-foreground"
+        >
+          이렇게 시작하면 됩니다
+        </h2>
+        <ol className="grid gap-3 sm:grid-cols-3">
+          {LANDING_STEPS.map((item) => (
+            <li
+              key={item.step}
+              className="rounded-xl border border-border bg-card px-4 py-4"
+            >
+              <p className="text-xs font-medium text-primary">
+                {item.step}단계
+              </p>
+              <p className="mt-2 font-heading text-base font-semibold text-foreground">
+                {item.title}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                {item.description}
+              </p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       <section className="space-y-4" aria-labelledby="feature-heading">
@@ -96,7 +223,7 @@ const LandingPage = () => {
           id="feature-heading"
           className="font-heading text-xl font-semibold text-foreground"
         >
-          KnitBook에서 할 수 있는 일
+          {SITE_NAME}에서 할 수 있는 일
         </h2>
         <ul className="grid gap-3 sm:grid-cols-2">
           {FEATURES.map((feature) => {
@@ -115,6 +242,26 @@ const LandingPage = () => {
               </li>
             );
           })}
+        </ul>
+      </section>
+
+      <section className="space-y-4" aria-labelledby="audience-heading">
+        <h2
+          id="audience-heading"
+          className="font-heading text-xl font-semibold text-foreground"
+        >
+          이런 분께 맞습니다
+        </h2>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
+          {LANDING_AUDIENCE.forYou.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="text-sm font-medium text-foreground">이런 용도는 아닙니다</p>
+        <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-muted-foreground">
+          {LANDING_AUDIENCE.notForYou.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
         </ul>
       </section>
 
@@ -140,36 +287,28 @@ const LandingPage = () => {
         </p>
       </section>
 
-      <section className="space-y-4" aria-labelledby="guide-heading">
-        <div className="flex items-end justify-between gap-3">
-          <h2
-            id="guide-heading"
-            className="font-heading text-xl font-semibold text-foreground"
-          >
-            뜨개 가이드
-          </h2>
-          <Link
-            href="/guides"
-            className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-          >
-            모두 보기
-          </Link>
-        </div>
-        <ul className="space-y-3">
-          {guides.slice(0, 4).map((guide) => (
-            <li key={guide.slug}>
-              <Link
-                href={`/guides/${guide.slug}`}
-                className="block rounded-xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted/60"
-              >
-                <p className="font-medium text-foreground">{guide.title}</p>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {guide.description}
-                </p>
-              </Link>
-            </li>
+      <section className="space-y-4" aria-labelledby="faq-heading">
+        <h2
+          id="faq-heading"
+          className="font-heading text-xl font-semibold text-foreground"
+        >
+          자주 묻는 질문
+        </h2>
+        <div className="space-y-3">
+          {LANDING_FAQS.map((faq) => (
+            <article
+              key={faq.question}
+              className="rounded-xl border border-border bg-card px-4 py-4"
+            >
+              <h3 className="font-heading text-base font-semibold text-foreground">
+                {faq.question}
+              </h3>
+              <p className="mt-2 text-sm leading-7 text-muted-foreground">
+                {faq.answer}
+              </p>
+            </article>
           ))}
-        </ul>
+        </div>
       </section>
 
       <ContentAd slot="landing" className="py-2" />
@@ -179,15 +318,23 @@ const LandingPage = () => {
           기록을 시작하려면
         </h2>
         <p className="mt-2 text-sm leading-7 text-muted-foreground">
-          이메일만으로 가입할 수 있습니다. 서비스 이용 전{" "}
+          이메일만으로 가입할 수 있습니다. 가이드는 가입 전에도 읽을 수 있고,
+          개인 기록장은 가입 후에 열립니다. 서비스 이용 전{" "}
           <Link href="/terms" className="underline-offset-4 hover:underline">
             이용약관
           </Link>
           과 개인정보처리방침을 꼭 읽어 주세요.
         </p>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap gap-2">
           <Button nativeButton={false} render={<Link href="/signup" />}>
             회원가입
+          </Button>
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href="/login" />}
+          >
+            로그인
           </Button>
         </div>
       </section>

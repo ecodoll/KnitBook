@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import KnitBookLogo from "@/components/knitbook/auth/KnitBookLogo";
 import ForgotPasswordForm, {
   type ForgotPasswordFormValues,
@@ -13,7 +14,6 @@ import PageLoading from "@/components/knitbook/shared/PageLoading";
 import { requestPasswordReset } from "@/lib/knitbook/profile-client";
 import { createClient } from "@/lib/supabase/client";
 import SiteFooter from "@/components/site/SiteFooter";
-import LoginGuideLinks from "@/components/site/LoginGuideLinks";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -202,7 +202,15 @@ const LoginScreen = ({ resetFailed = false }: LoginScreenProps) => {
           </CardContent>
         </Card>
 
-        <LoginGuideLinks />
+        <p className="text-center text-sm leading-6 text-muted-foreground">
+          로그인하지 않고{" "}
+          <Link
+            href="/guides"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            뜨개 가이드 읽기
+          </Link>
+        </p>
       </div>
       <div className="relative z-10">
         <SiteFooter />
