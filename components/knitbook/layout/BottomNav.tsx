@@ -8,8 +8,8 @@ import { BookOpen, Home, Layers, Scissors } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/", label: "홈", icon: Home },
-  { href: "/patterns", label: "도안", icon: BookOpen },
   { href: "/projects", label: "작품", icon: Layers },
+  { href: "/patterns", label: "도안", icon: BookOpen },
   { href: "/yarns", label: "실", icon: Scissors },
 ] as const;
 
