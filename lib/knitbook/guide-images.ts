@@ -38,6 +38,11 @@ const inline = (file: string, alt: string, caption: string): GuideFigureData => 
 };
 
 const GUIDE_HEROES: Record<string, GuideFigureData> = {
+  "knitting-slang": hero(
+    "knitting-slang-unravel-hero.jpg",
+    "린넨 위에 풀리기 시작한 세이지 그린 뜨개와 나무 바늘",
+    "푸르시오는 해리 포터의 크루시오를 희화화한 말입니다. 코를 풀고 다음 단을 다시 고르는 주문입니다."
+  ),
   "gauge-swatch": hero(
     "gauge-swatch-hero.jpg",
     "린넨 위에 펼친 세이지 그린 게이지 스와치와 나무 자",
@@ -81,6 +86,13 @@ const GUIDE_HEROES: Record<string, GuideFigureData> = {
 };
 
 const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
+  "knitting-slang": {
+    "스타시, 얀치킨, 얀바프 — 실을 둘러싼 말들": inline(
+      "knitting-slang-yarn-chicken.jpg",
+      "거의 다 뜬 크림색 편물과 옆에 남은 작은 실뭉치",
+      "몸판이 거의 끝났는데 실이 주먹만 하게 남으면, 그게 얀치킨입니다. 이기면 완성, 지면 배색입니다."
+    ),
+  },
   "gauge-swatch": {
     "재는 방법과 숫자를 기록하는 습관": inline(
       "gauge-swatch-measure.jpg",
