@@ -39,7 +39,7 @@ const inline = (file: string, alt: string, caption: string): GuideFigureData => 
 
 const GUIDE_HEROES: Record<string, GuideFigureData> = {
   "knitting-slang": hero(
-    "knitting-slang-hero.jpg",
+    "knitting-slang-unravel-hero.jpg",
     "린넨 위에 풀리기 시작한 세이지 그린 뜨개와 나무 바늘",
     "푸르시오는 해리 포터의 크루시오를 희화화한 말입니다. 코를 풀고 다음 단을 다시 고르는 주문입니다."
   ),
