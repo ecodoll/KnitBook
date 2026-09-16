@@ -27,7 +27,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "도안 속 게이지가 내 손과 다를 때 작품이 커지거나 작아집니다. 스와치를 뜨고 측정하는 현실적인 순서를 정리했습니다.",
     publishedAt: "2026-09-01",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 9,
     sections: [
       {
@@ -70,7 +70,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "실 라벨의 숫자만 알아도 대용 실을 고르고, 같은 색을 추가 구매하고, 재고를 정리하기가 쉬워집니다.",
     publishedAt: "2026-09-02",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 8,
     sections: [
       {
@@ -111,7 +111,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "몇 단까지 떴는지만 적으면 몇 주 뒤 다시 집을 때 막힙니다. 실, 바늘, 변경 사항까지 남기는 짧은 기록 습관을 제안합니다.",
     publishedAt: "2026-09-03",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 8,
     sections: [
       {
@@ -153,7 +153,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "타래를 세는 대신 미터와 상태를 기준으로 재고를 나누면, 다음에 무엇을 살지와 무엇을 뜰지가 분명해집니다.",
     publishedAt: "2026-09-04",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 9,
     sections: [
       {
@@ -196,7 +196,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "메일함, 클라우드, 휴대폰 다운로드 폴더에 흩어진 도안을 작품과 연결해 두는 현실적인 방법을 정리했습니다.",
     publishedAt: "2026-09-05",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 8,
     sections: [
       {
@@ -238,7 +238,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "초보가 한 번에 공구를 모으려다 지치는 일을 줄이기 위해, 첫 작품 기준으로 준비물을 나눠 보았습니다.",
     publishedAt: "2026-09-06",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 9,
     sections: [
       {
@@ -279,7 +279,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "다 뜬 뒤 물과 핀으로 모양을 다듬으면 코가 살아나고 길이가 안정됩니다. 섬유별로 과하지 않게 하는 방법을 정리했습니다.",
     publishedAt: "2026-09-12",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 8,
     sections: [
       {
@@ -314,7 +314,7 @@ export const GUIDES: GuideArticle[] = [
     description:
       "바늘을 세트부터 사면 서랍만 늘어납니다. 도안이 요구하는 호수와 뜨는 방식만 보고 한두 개부터 고르는 기준을 안내합니다.",
     publishedAt: "2026-09-14",
-    updatedAt: "2026-09-15",
+    updatedAt: "2026-09-16",
     readingMinutes: 8,
     sections: [
       {

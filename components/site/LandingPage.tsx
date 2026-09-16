@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { BookOpen, Layers, NotebookPen, Scissors } from "lucide-react";
 import ContentAd from "@/components/adsense/ContentAd";
 import LandingHeroVisual from "@/components/site/LandingHeroVisual";
+import { getGuideHeroFigure } from "@/lib/knitbook/guide-images";
 import { getAllGuides, getFeaturedGuides } from "@/lib/knitbook/guides";
 import {
   LANDING_AUDIENCE,
@@ -109,30 +111,47 @@ const LandingPage = () => {
           </Link>
         </div>
         <ul className="grid gap-3 sm:grid-cols-2">
-          {featuredGuides.map((guide) => (
-            <li key={guide.slug}>
-              <Link
-                href={`/guides/${guide.slug}`}
-                className="flex h-full flex-col rounded-xl border border-border bg-card px-4 py-4 transition-colors hover:bg-muted/60"
-              >
-                <p className="text-xs font-medium text-primary">
-                  {guide.shortTitle}
-                  <span className="mx-1.5 text-muted-foreground" aria-hidden>
-                    ·
-                  </span>
-                  <span className="font-normal text-muted-foreground">
-                    {guide.readingMinutes}분 읽기
-                  </span>
-                </p>
-                <p className="mt-2 font-heading text-base font-semibold leading-6 text-foreground">
-                  {guide.title}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {guide.description}
-                </p>
-              </Link>
-            </li>
-          ))}
+          {featuredGuides.map((guide) => {
+            const hero = getGuideHeroFigure(guide.slug);
+
+            return (
+              <li key={guide.slug}>
+                <Link
+                  href={`/guides/${guide.slug}`}
+                  className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card transition-colors hover:bg-muted/60"
+                >
+                  {hero ? (
+                    <div className="relative aspect-video overflow-hidden bg-muted">
+                      <Image
+                        src={hero.src}
+                        alt={hero.alt}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 24rem"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : null}
+                  <div className="px-4 py-4">
+                    <p className="text-xs font-medium text-primary">
+                      {guide.shortTitle}
+                      <span className="mx-1.5 text-muted-foreground" aria-hidden>
+                        ·
+                      </span>
+                      <span className="font-normal text-muted-foreground">
+                        {guide.readingMinutes}분 읽기
+                      </span>
+                    </p>
+                    <p className="mt-2 font-heading text-base font-semibold leading-6 text-foreground">
+                      {guide.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                      {guide.description}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
         {moreGuides.length > 0 ? (
           <div className="space-y-2">

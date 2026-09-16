@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import GuideArticleView from "@/components/site/GuideArticleView";
+import { getGuideHeroFigure } from "@/lib/knitbook/guide-images";
 import { getAllGuides, getGuideBySlug } from "@/lib/knitbook/guides";
 
 type GuideDetailPageProps = PageProps<"/guides/[slug]">;
@@ -27,9 +28,27 @@ export const generateMetadata = async ({
     };
   }
 
+  const hero = getGuideHeroFigure(guide.slug);
+
   return {
     title: guide.title,
     description: guide.description,
+    openGraph: {
+      title: guide.title,
+      description: guide.description,
+      ...(hero
+        ? {
+            images: [
+              {
+                url: hero.src,
+                width: hero.width,
+                height: hero.height,
+                alt: hero.alt,
+              },
+            ],
+          }
+        : {}),
+    },
   };
 };
 
