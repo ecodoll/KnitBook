@@ -83,6 +83,11 @@ const GUIDE_HEROES: Record<string, GuideFigureData> = {
     "대바늘, 줄바늘, 코바늘과 실을 린넨 위에 나란히 둔 모습",
     "도구는 도안이 정한 호수와 뜨는 방식에 맞추어 한두 개부터 고릅니다."
   ),
+  "needle-types": hero(
+    "needle-types-hero.jpg",
+    "실과 직선 대바늘, 줄바늘, 양끝바늘, 코바늘을 린넨 위에 나란히 둔 모습",
+    "왼쪽부터 실, 직선 대바늘, 줄바늘, 양끝바늘, 코바늘. 생김새가 다른 만큼 잘하는 일도 다릅니다."
+  ),
 };
 
 const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
@@ -147,6 +152,23 @@ const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
       "choose-needles-materials.jpg",
       "대나무 대바늘과 금속 대바늘을 실과 함께 비교해 둔 모습",
       "나무는 덜 미끄럽고, 금속은 빠릅니다. 한 작품을 끝낸 뒤 불편했던 지점만 바꾸면 됩니다."
+    ),
+  },
+  "needle-types": {
+    "직선 대바늘과 줄바늘, 넓게 뜨거나 둥글게": inline(
+      "needle-types-circular.jpg",
+      "줄바늘에 걸린 세이지 그린 원통 뜨개와 옆에 둔 실타래",
+      "줄바늘은 두 끝과 줄만으로 목도리도, 모자도 뜹니다. 코는 줄에 쉬고, 손은 끝만 움직이면 됩니다."
+    ),
+    "양끝바늘은 작은 텐트를 칩니다": inline(
+      "needle-types-dpn.jpg",
+      "양끝바늘 네 개에 나눠 걸린 작은 세이지 그린 뜨개",
+      "양끝바늘은 짧은 막대 여럿이 코를 나눠 듭니다. 빈 바늘로 다음 면을 뜨면 작은 원통이 됩니다."
+    ),
+    "코바늘은 한 손으로 집을 짓습니다": inline(
+      "needle-types-crochet.jpg",
+      "나무 코바늘과 세이지 그린 그래니 스퀘어, 옆에 둔 실타래",
+      "코바늘은 갈고리 하나로 코를 걸어 올립니다. 완성된 코는 바늘이 아니라 천에 남습니다."
     ),
   },
 };
