@@ -88,6 +88,11 @@ const GUIDE_HEROES: Record<string, GuideFigureData> = {
     "실과 직선 대바늘, 줄바늘, 양끝바늘, 코바늘을 린넨 위에 나란히 둔 모습",
     "왼쪽부터 실, 직선 대바늘, 줄바늘, 양끝바늘, 코바늘. 생김새가 다른 만큼 잘하는 일도 다릅니다."
   ),
+  "things-to-knit": hero(
+    "things-to-knit-hero.jpg",
+    "린넨 위에 접어 둔 세이지 그린 스웨터, 뜨개 가방, 비니와 장갑",
+    "옷, 가방, 모자. 바늘 위의 코가 쌓이면 입고 메고 쓰는 것이 됩니다."
+  ),
 };
 
 const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
@@ -169,6 +174,23 @@ const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
       "needle-types-crochet.jpg",
       "나무 코바늘과 세이지 그린 그래니 스퀘어, 옆에 둔 실타래",
       "코바늘은 갈고리 하나로 코를 걸어 올립니다. 완성된 코는 바늘이 아니라 천에 남습니다."
+    ),
+  },
+  "things-to-knit": {
+    "옷 — 내가 뜬 것을 입는 일": inline(
+      "things-to-knit-clothes.jpg",
+      "접어 둔 세이지 그린 손뜨개 스웨터와 나무 대바늘",
+      "직접 뜬 스웨터를 입는 일은, 내가 센 단이 팔에 앉는 일입니다."
+    ),
+    "가방 — 손에 들고 어깨에 메는 일": inline(
+      "things-to-knit-bag.jpg",
+      "세이지 그린 코바늘 토트백 안에 크림색 실타래가 담긴 모습",
+      "다음에 뜰 실을 담는 가방도, 한때는 실이었습니다."
+    ),
+    "악세서리와 작은 쓰임 — 매일 손이 가는 온기": inline(
+      "things-to-knit-accessories.jpg",
+      "세이지 그린 비니와 크림색 넥워머, 옆에 둔 실과 바늘",
+      "모자와 넥워머는 몸에서 가장 가까운 악세서리입니다. 끝나는 속도가 빨라, 다음 날부터 쓸 수 있습니다."
     ),
   },
 };
