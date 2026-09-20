@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import GuideArticleView from "@/components/site/GuideArticleView";
 import { getGuideHeroFigure } from "@/lib/knitbook/guide-images";
 import { getAllGuides, getGuideBySlug } from "@/lib/knitbook/guides";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 
 type GuideDetailPageProps = PageProps<"/guides/[slug]">;
 
@@ -30,7 +31,7 @@ export const generateMetadata = async ({
 
   const hero = getGuideHeroFigure(guide.slug);
 
-  return {
+  return withPublicCanonical(`/guides/${guide.slug}`, {
     title: guide.title,
     description: guide.description,
     openGraph: {
@@ -49,7 +50,7 @@ export const generateMetadata = async ({
           }
         : {}),
     },
-  };
+  });
 };
 
 /**

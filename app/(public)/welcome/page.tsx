@@ -2,23 +2,20 @@ import type { Metadata } from "next";
 import LandingPage from "@/components/site/LandingPage";
 import { getAllGuides } from "@/lib/knitbook/guides";
 import { LANDING_FAQS, LANDING_META_DESCRIPTION } from "@/lib/knitbook/landing-content";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 import { getSiteUrl, SITE_NAME } from "@/lib/knitbook/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withPublicCanonical("/", {
   title: {
     absolute: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
   },
   description: LANDING_META_DESCRIPTION,
-  alternates: {
-    canonical: getSiteUrl(),
-  },
   openGraph: {
     title: `${SITE_NAME} — 뜨개인을 위한 도안·작품·실 기록장`,
     description: LANDING_META_DESCRIPTION,
-    url: getSiteUrl(),
     type: "website",
   },
-};
+});
 
 /**
  * 비로그인 홈 본문이다. 미들웨어가 / 요청을 이 경로로 내부 연결한다.

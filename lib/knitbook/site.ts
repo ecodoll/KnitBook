@@ -4,6 +4,8 @@
 
 const FALLBACK_SITE_URL = "http://localhost:3000";
 const FALLBACK_CONTACT_EMAIL = "ecodoll7@gmail.com";
+const PRODUCTION_CANONICAL_ORIGIN = "https://www.knitbook.app";
+const PRODUCTION_HOSTS = new Set(["knitbook.app", "www.knitbook.app"]);
 
 /**
  * 끝에 붙는 슬래시를 제거한 절댓값을 반환한다.
@@ -13,25 +15,53 @@ const trimTrailingSlash = (value: string) => {
 };
 
 /**
+ * Vercel이 apex를 www로 보내므로 검색용 주소도 www로 맞춘다.
+ */
+const toCanonicalSiteUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    if (PRODUCTION_HOSTS.has(url.hostname)) {
+      return PRODUCTION_CANONICAL_ORIGIN;
+    }
+    return trimTrailingSlash(url.toString());
+  } catch {
+    return trimTrailingSlash(value);
+  }
+};
+
+/**
  * 배포 URL을 환경 변수에서 고른다.
  */
 export const getSiteUrl = () => {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   if (fromEnv) {
-    return trimTrailingSlash(fromEnv);
+    return toCanonicalSiteUrl(fromEnv);
   }
 
   const vercelProduction = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
   if (vercelProduction) {
-    return trimTrailingSlash(`https://${vercelProduction}`);
+    return toCanonicalSiteUrl(`https://${vercelProduction}`);
   }
 
   const vercelUrl = process.env.VERCEL_URL?.trim();
   if (vercelUrl) {
-    return trimTrailingSlash(`https://${vercelUrl}`);
+    return toCanonicalSiteUrl(`https://${vercelUrl}`);
   }
 
   return FALLBACK_SITE_URL;
+};
+
+/**
+ * 공개 페이지의 검색용 절대 주소를 만든다.
+ */
+export const getPageUrl = (path = "") => {
+  const origin = getSiteUrl();
+  if (!path || path === "/") {
+    return origin;
+  }
+
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${origin}${trimTrailingSlash(normalized)}`;
 };
 
 /**

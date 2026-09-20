@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LegalArticle from "@/components/site/LegalArticle";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 import { getContactEmail, SITE_NAME } from "@/lib/knitbook/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withPublicCanonical("/terms", {
   title: "이용약관",
   description:
     "KnitBook 웹 서비스 이용 조건, 금지 행위, 게시 콘텐츠와 책임 범위를 안내합니다.",
-};
+});
 
 /**
  * 서비스 이용 조건을 공개한다.
