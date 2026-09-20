@@ -7,6 +7,9 @@ import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 
 type GuideDetailPageProps = PageProps<"/guides/[slug]">;
 
+/** 사이트맵에 있는 가이드만 열고, 없는 슬러그는 바로 404로 보낸다. */
+export const dynamicParams = false;
+
 /**
  * 가이드 상세 경로를 미리 만든다.
  */
@@ -26,6 +29,10 @@ export const generateMetadata = async ({
   if (!guide) {
     return {
       title: "가이드를 찾을 수 없어요",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
