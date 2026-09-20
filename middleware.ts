@@ -36,6 +36,17 @@ const redirectToLogin = (request: NextRequest, from?: NextResponse) => {
 };
 
 /**
+ * 공개 랜딩은 / 만 쓰도록 /welcome 을 홈으로 보낸다.
+ */
+const redirectWelcomeToHome = (request: NextRequest, from?: NextResponse) => {
+  const url = request.nextUrl.clone();
+  url.pathname = "/";
+  const redirected = NextResponse.redirect(url, 308);
+
+  return from ? copySessionCookies(from, redirected) : redirected;
+};
+
+/**
  * Supabase 공개 키가 준비됐는지 확인한다.
  */
 const hasSupabaseConfig = () => {
@@ -53,6 +64,10 @@ const middleware = async (request: NextRequest) => {
   const onAuthPage = isAuthPath(pathname);
 
   if (!hasSupabaseConfig()) {
+    if (pathname === "/welcome") {
+      return redirectWelcomeToHome(request);
+    }
+
     if (pathname === "/") {
       return rewriteGuestHome(request);
     }
@@ -65,6 +80,11 @@ const middleware = async (request: NextRequest) => {
   }
 
   const { supabaseResponse, user } = await updateSession(request);
+
+  // 내부 렌더 경로인 /welcome 을 직접 열면 홈으로 보낸다.
+  if (pathname === "/welcome") {
+    return redirectWelcomeToHome(request, supabaseResponse);
+  }
 
   // 비로그인 기본 화면은 공개 랜딩이다. 주소는 / 로 두고 본문만 /welcome 을 쓴다.
   if (!user && pathname === "/") {
