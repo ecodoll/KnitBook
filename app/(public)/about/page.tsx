@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 import { getContactEmail, SITE_NAME } from "@/lib/knitbook/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withPublicCanonical("/about", {
   title: "소개",
   description:
     "KnitBook은 뜨개인의 도안·작품·실 기록을 한곳에 모으는 웹 서비스입니다. 운영 목적과 연락처를 안내합니다.",
-};
+});
 
 /**
  * 서비스 소개와 운영 주체를 공개한다.

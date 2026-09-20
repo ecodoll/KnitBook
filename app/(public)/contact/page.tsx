@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import ContactForm from "@/components/site/ContactForm";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 import { getContactEmail } from "@/lib/knitbook/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withPublicCanonical("/contact", {
   title: "문의",
   description:
     "KnitBook 이용, 개인정보, 광고에 관한 문의 방법을 안내합니다.",
-};
+});
 
 /**
  * 운영자에게 연락할 수 있는 공개 문의 페이지다.

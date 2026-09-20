@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import LegalArticle from "@/components/site/LegalArticle";
+import { withPublicCanonical } from "@/lib/knitbook/public-metadata";
 import { getContactEmail, SITE_NAME } from "@/lib/knitbook/site";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = withPublicCanonical("/privacy", {
   title: "개인정보처리방침",
   description:
     "KnitBook이 수집하는 개인정보, 보관 기간, Google 광고 쿠키, 이용자 권리를 안내합니다.",
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
-};
+});
 
 /**
  * 개인정보 보호법과 애드센스 심사에 필요한 처리 방침을 공개한다.
