@@ -81,6 +81,11 @@ export const getAdSenseClientId = () => {
     return null;
   }
 
+  const digits = clientId.match(/(\d{8,})\s*$/)?.[1];
+  if (digits) {
+    return `ca-pub-${digits}`;
+  }
+
   return clientId.startsWith("ca-pub-") ? clientId : `ca-pub-${clientId}`;
 };
 

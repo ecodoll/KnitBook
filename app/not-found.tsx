@@ -1,6 +1,15 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import SiteShell from "@/components/site/SiteShell";
 import { Button } from "@/components/ui/button";
+
+export const metadata: Metadata = {
+  title: "페이지를 찾을 수 없어요",
+  robots: {
+    index: false,
+    follow: true,
+  },
+};
 
 /**
  * 없는 주소를 열었을 때 한글 안내와 다음 경로를 보여 준다.
