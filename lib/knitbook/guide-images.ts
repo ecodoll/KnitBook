@@ -93,6 +93,11 @@ const GUIDE_HEROES: Record<string, GuideFigureData> = {
     "린넨 위에 접어 둔 세이지 그린 스웨터, 뜨개 가방, 비니와 장갑",
     "옷, 가방, 모자. 바늘 위의 코가 쌓이면 입고 메고 쓰는 것이 됩니다."
   ),
+  "knitwear-care": hero(
+    "knitwear-care-hero.jpg",
+    "접어 둔 세이지 그린 스웨터와 크림색 비니, 옆에 둔 세제 병과 나무 블록",
+    "다 뜬 뒤가 관리의 시작입니다. 접어 두고, 부드럽게 빨고, 눕혀 말립니다."
+  ),
 };
 
 const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
@@ -191,6 +196,23 @@ const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
       "things-to-knit-accessories.jpg",
       "세이지 그린 비니와 크림색 넥워머, 옆에 둔 실과 바늘",
       "모자와 넥워머는 몸에서 가장 가까운 악세서리입니다. 끝나는 속도가 빨라, 다음 날부터 쓸 수 있습니다."
+    ),
+  },
+  "knitwear-care": {
+    "세탁은 자주보다 부드럽게": inline(
+      "knitwear-care-wash.jpg",
+      "대야에 미지근한 물을 받고 담근 세이지 그린 손뜨개 스웨터",
+      "비비거나 비틀지 마세요. 펼쳐 담그고, 대야를 기울여 물을 뺍니다."
+    ),
+    "말릴 때는 걸지 말고 눕히기": inline(
+      "knitwear-care-dry.jpg",
+      "수건 위에 소매와 몸판을 가지런히 눕혀 말리는 세이지 그린 스웨터",
+      "젖은 스웨터를 옷걸이에 거는 일은 어깨를 한 치수 키우는 일입니다."
+    ),
+    "다음 계절까지 두는 법": inline(
+      "knitwear-care-store.jpg",
+      "나무 서랍에 접어 둔 손뜨개 옷과 삼나무 블록, 라벤더",
+      "손뜨개 옷은 접어 둡니다. 삼나무와 라벤더는 보조이고, 깨끗한 채로 완전히 말리는 일이 먼저입니다."
     ),
   },
 };
