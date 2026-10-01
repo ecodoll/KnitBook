@@ -98,6 +98,11 @@ const GUIDE_HEROES: Record<string, GuideFigureData> = {
     "접어 둔 세이지 그린 스웨터와 크림색 비니, 옆에 둔 세제 병과 나무 블록",
     "다 뜬 뒤가 관리의 시작입니다. 접어 두고, 부드럽게 빨고, 눕혀 말립니다."
   ),
+  "knitting-vs-crochet": hero(
+    "knitting-vs-crochet-hero.jpg",
+    "세이지 그린 대바늘 스와치와 코바늘 그래니 스퀘어를 린넨 위에 나란히 둔 모습",
+    "왼쪽은 대바늘로 뜬 천, 오른쪽은 코바늘로 뜬 네모. 같은 계열의 실이라도 결이 다릅니다."
+  ),
 };
 
 const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
@@ -213,6 +218,23 @@ const GUIDE_SECTION_FIGURES: Record<string, Record<string, GuideFigureData>> = {
       "knitwear-care-store.jpg",
       "나무 서랍에 접어 둔 손뜨개 옷과 삼나무 블록, 라벤더",
       "손뜨개 옷은 접어 둡니다. 삼나무와 라벤더는 보조이고, 깨끗한 채로 완전히 말리는 일이 먼저입니다."
+    ),
+  },
+  "knitting-vs-crochet": {
+    "대바늘은 코를 줄에 앉혀 둡니다": inline(
+      "knitting-vs-crochet-knit.jpg",
+      "나무 대바늘에 걸린 세이지 그린 코와 아래로 늘어진 편물",
+      "대바늘은 살아있는 코를 바늘 위에 올려 둡니다. 천은 늘어나고, 코가 빠지면 아래로 이어집니다."
+    ),
+    "코바늘은 지금 이 코만 갈고리에 있습니다": inline(
+      "knitting-vs-crochet-hook.jpg",
+      "나무 코바늘에 걸린 한 코와 촘촘한 세이지 그린 코바늘 구, 짧은 띠",
+      "코바늘은 갈고리에 지금 뜨는 한 코만 있습니다. 완성된 면은 바늘 밖, 천 쪽에 남습니다."
+    ),
+    "작품에서 먼저 보이는 차이": inline(
+      "knitting-vs-crochet-works.jpg",
+      "대바늘로 뜬 세이지 스웨터와 코바늘 토트백, 작은 새 인형",
+      "흐르는 옷은 대바늘이, 형태가 남는 가방과 인형은 코바늘이 자주 맡습니다."
     ),
   },
 };
