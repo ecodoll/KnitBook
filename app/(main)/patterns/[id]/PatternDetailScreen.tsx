@@ -110,10 +110,12 @@ const PatternDetailScreen = ({ initialPattern }: PatternDetailScreenProps) => {
     }
   };
 
-  const handleSaveMemo = async (memo: string) => {
+  const handleSaveMemo = async (memo: string, pageNumber: number) => {
+    const page = pattern.pages.find((item) => item.pageNumber === pageNumber);
+
     try {
-      const saved = await upsertPatternPage(pattern.id, currentPage, {
-        bookmark: currentPageData.bookmark,
+      const saved = await upsertPatternPage(pattern.id, pageNumber, {
+        bookmark: page?.bookmark ?? false,
         memo,
       });
       updateLocalPage(saved);
