@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import PatternDetailScreen from "@/app/(main)/patterns/[id]/PatternDetailScreen";
@@ -6,6 +6,11 @@ import LoadingState from "@/components/knitbook/shared/LoadingState";
 import { getPatternDetailPageData } from "@/lib/knitbook/pattern-data";
 
 type PatternDetailPageProps = PageProps<"/patterns/[id]">;
+
+export const viewport: Viewport = {
+  // 안드로이드 크롬에서 키보드가 올라오면 레이아웃도 줄어 메모 칸이 가려지지 않는다.
+  interactiveWidget: "resizes-content",
+};
 
 export const generateMetadata = async ({
   params,
